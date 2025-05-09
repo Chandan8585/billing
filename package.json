@@ -1,7 +1,7 @@
 {
-  "name": "my-app",
+  "name": "aero-pack-pos",
   "version": "0.1.0",
-  "homepage": "/",
+  "homepage": ".",
   "private": true,
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^44.1.0",
@@ -25,6 +25,7 @@
     "@types/react-slick": "^0.23.13",
     "antd": "^5.23.3",
     "apexcharts": "^4.4.0",
+    "axios": "^1.9.0",
     "bootstrap": "^5.3.3",
     "bootstrap-daterangepicker": "^3.1.0",
     "boxicons": "^2.1.4",
@@ -83,6 +84,7 @@
     "sweetalert2": "^11.15.10",
     "sweetalert2-react-content": "^5.0.7",
     "swiper": "^11.2.2",
+    "use-debounce": "^10.0.4",
     "weather-icons-react": "^1.2.0",
     "yet-another-react-lightbox": "^3.17.5"
   },

@@ -1,9 +1,6 @@
 import React, { useEffect } from 'react'
 import ImageWithBasePath from '../../core/img/imagewithbasebath'
 import { useParams } from 'react-router-dom';
-import { fetchData } from '../../api';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchProductDetail, clearCurrentProduct } from '../../core/redux/slice/productsSlice';
 import { useGetProductDetailByIdQuery } from '../../core/redux/api/productApi';
 
 

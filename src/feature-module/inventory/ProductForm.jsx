@@ -39,7 +39,7 @@ productName: '',
 hsnCode: '',
 counter: '',
 category: '',
-subcategory: '',
+subCategory: '',
 brand: '',
 unit: '',
 description: '',
@@ -61,7 +61,7 @@ const ProductForm = ({isEditMode}) => {
     isEditMode: PropTypes.bool.isRequired,
   };
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [subcategoryOptions, setSubcategoryOptions] = useState([]);
+  const [subCategoryOptions, setsubCategoryOptions] = useState([]);
   const { data: stores, isLoading, error } = useGetStoreListQuery();
   const { data: category, isLoading: categoryLoading, error: categoryError } = useGetCategoryListQuery(); 
   const { 
@@ -92,6 +92,9 @@ const ProductForm = ({isEditMode}) => {
     setFormData(prev=> ({...prev, [name]: value}));
   }
   const handleSelectChange= (name, selectedOption) => {
+    if (name === 'category') {
+      handleCategoryChange(selectedOption);
+    }
     setFormData(prev => ({...prev, [name]: selectedOption?.value || ''}));
   }
  
@@ -149,9 +152,16 @@ const ProductForm = ({isEditMode}) => {
   };
   console.log( "formData",formData);
   const handleGenerateSku = async () => {
-    // const { data } = await skuId;
-    console.log(skuId);
-    setInputValue(skuId); 
+    console.log("skuid",skuId);
+    try {
+      if (isSkuLoading) return; // Prevent duplicate clicks
+      if (skuId) {
+        setFormData(prev => ({ ...prev, sku: skuId }));
+      }
+    } catch (error) {
+      // toast.error("Failed to generate SKU");
+      console.log(error);
+    }
   };
   const route = all_routes;
   const [tags, setTags] = useState(["Red", "Black"]);
@@ -172,21 +182,31 @@ const ProductForm = ({isEditMode}) => {
     label: cat?.name,
     subCategories: cat?.subCategory
   })) || [];
+
   const handleCategoryChange = (selectedOption) => {
-    setSelectedCategory(selectedOption);
-    
-    if (selectedOption) {
-      const newSubcategories = selectedOption?.subCategories?.map(subcat => ({
-        value: subcat,
-        label: subcat
-      }));
-      setSubcategoryOptions(newSubcategories);
-    } else {
-      setSubcategoryOptions([]);
-    }
+    const newCategoryValue = selectedOption?.value || null;
+    setSelectedCategory(newCategoryValue);
+  
+    setFormData(prev => ({
+      ...prev,
+      category: newCategoryValue || '',
+      subCategory: '' 
+    }));
+  
+    // Debugging logs
+    console.log('Selected Option:', selectedOption);
+    console.log('Subcategories from API:', selectedOption?.subCategories);
+  
+    const newSubcategories = (selectedOption?.subCategories || []).map(subcat => ({
+      value: subcat._id || subcat, // Handle both object and string subcategories
+      label: subcat.name || subcat
+    }));
+  
+    console.log('Transformed Subcategories:', newSubcategories);
+    setsubCategoryOptions(newSubcategories);
   };
 
-// console.log("subcategoryOption", subcategoryOptions);
+// console.log("subCategoryOption", subCategoryOptions);
 const handleCheckboxChange = (e) => {
   const { name, checked } = e.target;
   setFormData(prev => ({
@@ -226,9 +246,9 @@ const handleCheckboxChange = (e) => {
     { value: "25", label: "25" },
   ];
   const discounttype = [
-    { value: "choose", label: "Choose" },
+    { value: "null", label: "Choose" },
     { value: "percentage", label: "Percentage" },
-    { value: "cash", label: "Cash" },
+    { value: "fixed", label: "fixed" },
   ];
   const fastMoving = [
     { value: "true", label: "True" },
@@ -367,22 +387,23 @@ const handleCheckboxChange = (e) => {
                                 SKU<span className="text-danger ms-1">*</span>
                               </label>
                               <input 
-                                type="text" 
-                                className="form-control list" 
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                                required
-                                readOnly={!!skuId}
-                                name="sku"
-                              />
-                              <button 
+                                  type="text" 
+                                  className="form-control list" 
+                                  value={formData.sku} // Bind to formData.sku instead of formData.quantity
+                                  onChange={(e) => handleInputChange(e)} // Pass the event properly
+                                  required
+                                  readOnly={!!skuId?.data} // Make it read-only if SKU is generated
+                                  name="sku"
+                                />
+                            <button 
                               type="button" 
                               className="btn btn-primaryadd"  
                               onClick={handleGenerateSku} 
-                              disabled={isSkuLoading}
+                              disabled={isSkuLoading || !!formData.sku} // Disable if already generated
                             >
                               {isSkuLoading ? 'Generating...' : 'Generate'}
                             </button>
+                           
                             </div>
                           </div>
                           <div className="col-sm-6 col-12">
@@ -446,15 +467,16 @@ const handleCheckboxChange = (e) => {
                                 <label className="form-label">
                                   Sub Category<span className="text-danger ms-1">*</span>
                                 </label>
-                                <Select
-                                      classNamePrefix="react-select"
-                                      options={subcategoryOptions}
-                                      placeholder={selectedCategory ? "Choose Subcategory" : "Select category first"}
-                                      isDisabled={!selectedCategory}
-                                      value={subcategoryOptions.find(opt => opt.value === formData.subcategory)}
-                                      isClearable
-                                      name="subCategory"
-                                  />
+                             <Select
+                                classNamePrefix="react-select"
+                                options={subCategoryOptions}
+                                placeholder={selectedCategory ? "Choose subCategory" : "Select category first"}
+                                isDisabled={!selectedCategory}
+                                value={subCategoryOptions.find(opt => opt.value === formData.subCategory)}
+                                onChange={(option) => handleSelectChange('subCategory', option)}  // lowercase c
+                                isClearable
+                                name="subCategory"  // lowercase to match formData
+                              />
                               </div>
                             </div>
                           </div>
@@ -529,12 +551,15 @@ const handleCheckboxChange = (e) => {
                         </div>
                         {/* Editor */}
                         <div className="col-lg-12">
-                          <div className="summer-description-box">
-                            <label className="form-label">Description</label>
-                            <TextEditor />
-                            <p className="fs-14 mt-1">Maximum 60 Words</p>
-                          </div>
+                        <div className="summer-description-box">
+                          <label className="form-label">Description</label>
+                          <TextEditor 
+                            value={formData.description}
+                            onChange={handleInputChange}
+                            name="description"
+                          />
                         </div>
+                      </div>
                         {/* /Editor */}
                       </div>
                     </div>

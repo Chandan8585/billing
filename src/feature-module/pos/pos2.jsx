@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ImageWithBasePath from "../../core/img/imagewithbasebath";
 import {
@@ -15,14 +15,103 @@ import Select from "react-select"
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import PosModals from "../../core/modals/pos-modal/posModals";
-import CounterTwo from "../../core/common/counter/counterTwo";
-
+// import PosModals from "../../core/modals/pos-modal/posModals";
+import CounterThree from "../../core/common/counter/counterThree";
+import {  useFilterProductQuery, useGetCategoryListQuery , useGetProductListQuery } from "../../core/redux/api/productApi";
+import { useGetCartQuery, useRemoveFromCartMutation, useAddToCartMutation, useEmptyCartMutation, useGetCartTotalsQuery } from "../../core/redux/api/cartApi";
+import Pos2Counter from "./pos2Counter";
+import Item from "antd/es/list/Item";
+import { useDebounce } from "use-debounce";
+import { Empty } from "antd";
 
 const Pos2 = () => {
- const [activeTab , setActiveTab] = useState('all')
+  const {data: categoryList, isLoading: categoryLoading} = useGetCategoryListQuery([]);
+  const [allProducts, setAllProducts] = useState([]);
+const { data: initialProducts } = useGetProductListQuery();
+const [addToCartMutation] = useAddToCartMutation();
+ const [removeFromCart] = useRemoveFromCartMutation();
+ const [emptyCart] = useEmptyCartMutation();
+//  deletProductFromCart("asdjf");
+useEffect(() => {
+  if (initialProducts) {
+    setAllProducts(initialProducts.data || []);
+  }
+}, [initialProducts]);
+useEffect(()=>{
+
+}, []);
+  const [filters, setFilters] = useState({
+    category: 'all',
+    search: ''
+  });
+  const { data: serverCart ,refetch: refetchCart  } = useGetCartQuery();
+
+  console.log("serverCart" , serverCart);
+ const [activeTab , setActiveTab] = useState('all');
+ const [searchInput, setSearchInput] = useState('');
+
+ const [debouncedSearch] = useDebounce(searchInput, 800);
+
+
+const handleCategoryClick = (categoryId) => {
+  setFilters(prev => ({
+    ...prev,
+    category: categoryId
+  }));
+};
+
+// useEffect(() => {
+//   setFilters(prev => ({...prev, search: debouncedSearch[0]}));
+// }, [debouncedSearch]);
+// debouncedSearch
+const queryParams = useMemo(() => ({
+  category: filters.category === 'all' ? undefined : filters.category,
+  search: debouncedSearch || undefined,
+}), [filters.category, debouncedSearch]);
+
+const { data: filteredProducts, isLoading: productsLoading } = useFilterProductQuery(queryParams);
+const {data: amount} = useGetCartTotalsQuery();
+
+const productsToDisplay = useMemo(() => {
+  if (filters.category === 'all' && !debouncedSearch) {
+    return initialProducts?.data || [];
+  }
+  return filteredProducts?.data || [];
+}, [initialProducts, filteredProducts, filters.category, debouncedSearch]);
+const [cart , setCart] = useState([]);
 const Location = useLocation();
 const [showAlert1 , setShowAlert1] = useState(true)
+const cartItems = useMemo(() => {
+  return serverCart?.map(item => ({
+    ...item,
+    key: item?.product?._id
+  }));
+}, [serverCart]);
+
+const addToCart = async(productId) => {
+  try {
+    await addToCartMutation({productId, quantity: 1});
+    refetchCart();
+  } catch (error) {
+    console.log(error);
+  }
+}
+const handleRemoveFromCart = async(productId) => {
+  try {
+    await removeFromCart(productId)
+    refetchCart();
+  } catch (error) {
+    console.log(error);
+  }
+}
+const handleEmptyCart = async()=> {
+  try {
+    await emptyCart();
+    refetchCart();
+  } catch (error) {
+    console.log(error);
+  }
+}
   const settings = {
     dots: false,
     autoplay: false,
@@ -98,29 +187,8 @@ const [showAlert1 , setShowAlert1] = useState(true)
     { value: "25%", label: "25%" },
     { value: "30%", label: "30%" },
   ];
-useEffect(() => {
-    document.addEventListener("click", function (event) {
-        if (event.target.closest(".product-info")) {
-            let productInfo = event.target.closest(".product-info");
-            productInfo.classList.toggle("active");
-    
-            if (document.querySelectorAll(".product-info.active").length > 0) {
-                // If "active" exists, hide .empty-cart and show .product-list
-                document.querySelector(".product-wrap .empty-cart").style.display = "none";
-                document.querySelector(".product-wrap .product-list").style.display = "flex";
-            } else {
-                // If not "active", reverse the behavior
-                document.querySelector(".product-wrap .empty-cart").style.display = "flex";
-                document.querySelector(".product-wrap .product-list").style.display = "none";
-            }
-        }
-    });
-    document.body.classList.add("pos-page");
-    return () => {
-        document.body.classList.remove("pos-page");
-      }
-    
-}, [Location.pathname,showAlert1])
+
+
   return (
     <div className="main-wrapper">
       <div className="page-wrapper pos-pg-wrapper ms-0">
@@ -129,115 +197,62 @@ useEffect(() => {
             {/* Products */}
             <div className="col-md-12 col-lg-7 col-xl-8">
               <div className="pos-categories tabs_wrapper pb-0">
-                <div className="card pos-button">
-                  <div className="d-flex align-items-center flex-wrap">
-                    <Link
-                      to="#"
-                      className="btn btn-teal btn-md mb-xs-3"
-                      data-bs-toggle="modal"
-                      data-bs-target="#orders"
-                    >
-                      <i className="ti ti-shopping-cart me-1" />
-                      View Orders
-                    </Link>
-                    <Link
-                      to="#"
-                      className="btn btn-md btn-indigo"
-                      data-bs-toggle="modal"
-                      data-bs-target="#reset"
-                    >
-                      <i className="ti ti-reload me-1" />
-                      Reset
-                    </Link>
-                    <Link
-                      to="#"
-                      className="btn btn-md btn-info"
-                      data-bs-toggle="modal"
-                      data-bs-target="#recents"
-                    >
-                      <i className="ti ti-refresh-dot me-1" />
-                      Transaction
-                    </Link>
-                  </div>
-                </div>
+               
                 <div className="d-flex align-items-center justify-content-between">
                   <h4 className="mb-3">Categories</h4>
                 </div>
                 <Slider {...settings} className="tabs owl-carousel pos-category">
-                  <div onClick={()=>setActiveTab('all')} className={`owl-item ${activeTab === 'all' ? 'active' : ''}`}  id="all">
+                <div 
+                    className={`owl-item ${activeTab === 'all' ? 'active' : ''}`}
+                    onClick={() => handleCategoryClick('all')}
+                  >
                     <Link to="#">
                       <ImageWithBasePath
-                        src="assets/img/categories/category-01.svg"
-                        alt="Categories"
+                        src="assets/img/categories/all-products.svg"
+                        alt="All Products"
                       />
                     </Link>
                     <h6>
-                      <Link to="#">All Categories</Link>
+                      <Link to="#">All Products</Link>
                     </h6>
-                    <span>80 Items</span>
+                    {/* <span>{filteredProducts?.count || 0} Items</span> */}
                   </div>
-                  <div onClick={()=>setActiveTab('headphones')} className={`owl-item ${activeTab === 'headphones' ? 'active' : ''}`} id="headphones">
-                    <Link to="#">
-                      <ImageWithBasePath
-                        src="assets/img/categories/category-02.svg"
-                        alt="Categories"
-                      />
-                    </Link>
-                    <h6>
-                      <Link to="#">Headphones</Link>
-                    </h6>
-                    <span>4 Items</span>
-                  </div>
-                  <div onClick={()=>setActiveTab('shoes')} className={`owl-item ${activeTab === 'shoes' ? 'active' : ''}`} id="shoes">
-                    <Link to="#">
-                      <ImageWithBasePath
-                        src="assets/img/categories/category-03.svg"
-                        alt="Categories"
-                      />
-                    </Link>
-                    <h6>
-                      <Link to="#">Shoes</Link>
-                    </h6>
-                    <span>14 Items</span>
-                  </div>
-                  <div onClick={()=>setActiveTab('mobiles')} className={`owl-item ${activeTab === 'mobiles' ? 'active' : ''}`} id="mobiles">
-                    <Link to="#">
-                      <ImageWithBasePath
-                        src="assets/img/categories/category-04.svg"
-                        alt="Categories"
-                      />
-                    </Link>
-                    <h6>
-                      <Link to="#">Mobiles</Link>
-                    </h6>
-                    <span>7 Items</span>
-                  </div>
-                  <div onClick={()=>setActiveTab('watches')} className={`owl-item ${activeTab === 'watches' ? 'active' : ''}`} id="watches">
-                    <Link to="#">
-                      <ImageWithBasePath
-                        src="assets/img/categories/category-05.svg"
-                        alt="Categories"
-                      />
-                    </Link>
-                    <h6>
-                      <Link to="#">Watches</Link>
-                    </h6>
-                    <span>16 Items</span>
-                  </div>
-                  <div onClick={()=>setActiveTab('laptops')} className={`owl-item ${activeTab === 'laptops' ? 'active' : ''}`} id="laptops">
-                    <Link to="#">
-                      <ImageWithBasePath
-                        src="assets/img/categories/category-06.svg"
-                        alt="Categories"
-                      />
-                    </Link>
-                    <h6>
-                      <Link to="#">Laptops</Link>
-                    </h6>
-                    <span>18 Items</span>
-                  </div>
-
-                  
+                    {categoryLoading ? (
+                    <div className="owl-item">
+                      <Link to="#">
+                        <ImageWithBasePath
+                          src="assets/img/categories/category-06.svg"
+                          alt="Loading"
+                        />
+                      </Link>
+                      <h6>
+                        <Link to="#">Loading...</Link>
+                      </h6>
+                      <span>0 Items</span>
+                    </div>
+                  ) : (
+                    categoryList?.map((item) => (
+                      <div 
+                        key={item._id}
+                        className={`owl-item ${activeTab === item.name.toLowerCase() ? 'active' : ''}`}
+                        onClick={() => handleCategoryClick(item?._id)}
+                      >
+                        <Link to="#">
+                          <ImageWithBasePath
+                            src={item.icon || "assets/img/categories/default-category.svg"}
+                            alt={item.name}
+                          />
+                        </Link>
+                        <h6>
+                          <Link to="#">{item.name}</Link>
+                        </h6>
+                        {/* <span>
+                          {filteredProducts?.data?.filter(p => p.category === item._id).length || 0} Items
+                        </span> */}
+                      </div>
+                    ))
+                  )}
+                 
                 </Slider>
                 <div className="pos-products">
                   <div className="d-flex align-items-center justify-content-between">
@@ -250,680 +265,92 @@ useEffect(() => {
                         type="text"
                         className="form-control"
                         placeholder="Search Product"
+                        onChange={(e)=> setSearchInput(e.target.value)}
+                        value={debouncedSearch}
                       />
                     </div>
                   </div>
                   <div className="tabs_container">
-                    <div className={`tab_content ${activeTab === 'all' ? 'active' : ''} `} data-tab="all">
-                      <div className="row">
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-01.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Mobiles</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">IPhone 14 64GB</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>30 Pcs</span>
-                              <p>$15800</p>
+                  
+                    <div className={`tab_content ${activeTab === 'all' ? 'active' : ''} `} data-tab="filtered">
+                    <div className="row">
+                      {productsLoading ? (
+                        // Loading state
+                        [...Array(8)].map((_, index) => (
+                          <div key={`skeleton-${index}`} className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
+                            <div className="product-info card">
+                              <div className="pro-img skeleton-box" style={{ height: '180px' }} />
+                              <h6 className="cat-name skeleton-box" style={{ width: '80%', height: '20px' }} />
+                              <h6 className="product-name skeleton-box" style={{ width: '90%', height: '24px' }} />
+                              <div className="d-flex align-items-center justify-content-between price">
+                                <span className="skeleton-box" style={{ width: '40%', height: '18px' }} />
+                                <p className="skeleton-box" style={{ width: '30%', height: '18px' }} />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-02.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Computer</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">MacBook Pro</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>140 Pcs</span>
-                              <p>$1000</p>
+                        ))
+                      ) : filteredProducts?.data?.length > 0 ? (
+                        // Products grid
+                        filteredProducts?.data?.map((product) => (
+                          product && ( 
+                            <div key={product?._id} className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
+                              <div className="product-info card" onClick={() => addToCart(product?._id)}
+                                  >
+                                <Link to="#" className="pro-img">
+                                  <ImageWithBasePath
+                                    src={"assets/img/products/pos-product-17.png"}
+                                
+                                    alt={product?.productName || product?.name || "Product"}
+                                    onError={(e) => {
+                                      e.target.src = "assets/img/products/default-product.svg";
+                                    }}
+                                  />
+                                  <span><i className="ti ti-circle-check-filled" /></span>
+                                </Link>
+                                <h6 className="cat-name">
+                                  <Link to="#">
+                                    {typeof product?.category === 'object' 
+                                      ? product?.category?.name 
+                                      : product?.category || 'Uncategorized'}
+                                  </Link>
+                                </h6>
+                                <h6 className="product-name">
+                                  <Link to="#">{product?.productName || product?.name || "Unnamed Product"}</Link>
+                                </h6>
+                                <div className="d-flex align-items-center justify-content-between price">
+                                  <span>{product?.quantity || 0} {product?.unit || 'Pcs'}</span>
+                                  <p>Rs {(product?.saleRate || product?.price || 0).toFixed(2)}</p>
+                                </div>
+                              </div>
                             </div>
+                          )
+                        ))
+                      ) : (
+                        // Empty state
+                        <div className="col-12 text-center py-5">
+                          <div className="fs-24 mb-3">
+                            <i className="ti ti-shopping-cart" />
                           </div>
+                          <p className="fw-bold">No products found</p>
+                          {filters.search && (
+                              <p className="text-muted">No results for </p>
+                            )}
                         </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-03.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Watches</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">Rolex Tribute V3</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>220 Pcs</span>
-                              <p>$6800</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-04.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Shoes</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">Red Nike Angelo</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>78 Pcs</span>
-                              <p>$7800</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card active" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-05.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Headphones</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">Airpod 2</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>47 Pcs</span>
-                              <p>$5478</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-06.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Shoes</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">Blue White OGR</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>54 Pcs</span>
-                              <p>$987</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-07.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Laptop</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">
-                                IdeaPad Slim 5 Gen 7
-                              </Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>74 Pcs</span>
-                              <p>$1454</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-08.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Headphones</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">SWAGME</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>14 Pcs</span>
-                              <p>$6587</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-09.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Watches</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">
-                                Timex Black Silver
-                              </Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>24 Pcs</span>
-                              <p>$1457</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-10.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Computer</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">Tablet 1.02 inch</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>14 Pcs</span>
-                              <p>$4744</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-11.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Watches</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">
-                                Fossil Pair Of 3 in 1{" "}
-                              </Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>40 Pcs</span>
-                              <p>$789</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-18.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Shoes</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">Green Nike Fe</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>78 Pcs</span>
-                              <p>$7847</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      )}
                     </div>
-                    <div className={`tab_content ${activeTab === 'headphones' ? 'active' : ''} `} data-tab="headphones">
-                      <div className="row">
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-05.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Headphones</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">Airpod 2</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>47 Pcs</span>
-                              <p>$5478</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-08.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <Check className="feather-16"/>
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Headphones</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">SWAGME</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>14 Pcs</span>
-                              <p>$6587</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
                     </div>
-                    <div className={`tab_content ${activeTab === 'shoes' ? 'active' : ''} `} data-tab="shoes">
-                      <div className="row">
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-04.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Shoes</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">Red Nike Angelo</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>78 Pcs</span>
-                              <p>$7800</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-06.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Shoes</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">Blue White OGR</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>54 Pcs</span>
-                              <p>$987</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-18.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Shoes</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">Green Nike Fe</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>78 Pcs</span>
-                              <p>$7847</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className={`tab_content ${activeTab === 'mobiles' ? 'active' : ''} `} data-tab="mobiles">
-                      <div className="row">
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-01.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Mobiles</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">IPhone 14 64GB</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>30 Pcs</span>
-                              <p>$15800</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-14.png"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Mobiles</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">Iphone 11</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>14 Pcs</span>
-                              <p>$3654</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className={`tab_content ${activeTab === 'watches' ? 'active' : ''} `} data-tab="watches">
-                      <div className="row">
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-03.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Watches</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">Rolex Tribute V3</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>220 Pcs</span>
-                              <p>$6800</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-09.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Watches</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">
-                                Timex Black Silver
-                              </Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>24 Pcs</span>
-                              <p>$1457</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-11.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Watches</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">
-                                Fossil Pair Of 3 in 1{" "}
-                              </Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>40 Pcs</span>
-                              <p>$789</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className={`tab_content ${activeTab === 'laptops' ? 'active' : ''} `} data-tab="laptops">
-                      <div className="row">
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-02.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Computer</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">MacBook Pro</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>140 Pcs</span>
-                              <p>$1000</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-07.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Laptop</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">
-                                IdeaPad Slim 5 Gen 7
-                              </Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>74 Pcs</span>
-                              <p>$1454</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-10.svg"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Computer</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">Tablet 1.02 inch</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>14 Pcs</span>
-                              <p>$4744</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-13.png"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Laptop</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">Yoga Book 9i</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>65 Pcs</span>
-                              <p>$4784</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                          <div className="product-info card" onClick={()=>setShowAlert1(!showAlert1)} tabIndex="0">
-                            <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-14.png"
-                                alt="Products"
-                              />
-                              <span>
-                                <i className="ti ti-circle-check-filled" />
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Laptop</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">IdeaPad Slim 3i</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <span>47 Pcs</span>
-                              <p>$1245</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
                   </div>
+                  
                 </div>
               </div>
             </div>
             {/* /Products */}
-            {/* Order Details */}
             <div className="col-md-12 col-lg-5 col-xl-4 ps-0 theiaStickySidebar">
               <aside className="product-order-list">
                 <div className="order-head bg-light d-flex align-items-center justify-content-between w-100">
                   <div>
                     <h3>Order List</h3>
-                    <span>Transaction ID : #65565</span>
+                    <span>ORDER ID : #65565</span>
                   </div>
                   <div>
                     <Link className="link-danger fs-16" to="#">
@@ -931,43 +358,17 @@ useEffect(() => {
                     </Link>
                   </div>
                 </div>
-                <div className="customer-info block-section">
-                  <h4 className="mb-3">Customer Information</h4>
-                  <div className="input-block d-flex align-items-center">
-                    <div className="flex-grow-1">
-                    <Select
-                      options={options}
-                      classNamePrefix="react-select select"
-                      placeholder="Choose a Name"
-                      defaultValue={options[0]}
-                      />
-                    </div>
-                    <Link
-                      to="#"
-                      className="btn btn-primary btn-icon"
-                      data-bs-toggle="modal"
-                      data-bs-target="#create"
-                    >
-                      <UserPlus className="feather-16" />
-                    </Link>
-                  </div>
-                  <div className="input-block">
-                  <Select
-                      options={productOptions}
-                      classNamePrefix="react-select select"
-                      placeholder="Select"
-                      defaultValue={productOptions[0]}
-                      />
-                  </div>
-                </div>
+          
                 <div className="product-added block-section">
                   <div className="head-text d-flex align-items-center justify-content-between">
                     <h5 className="d-flex align-items-center mb-0">
-                      Product Added<span className="count">2</span>
+                      Product Added<span className="count">{serverCart?.length}</span>
                     </h5>
                     <Link
                       to="#"
                       className="d-flex align-items-center link-danger"
+                        data-bs-toggle="modal"
+                         data-bs-target="#delete"
                     >
                       <span className="me-2">
                         <X className="feather-16" />
@@ -976,184 +377,65 @@ useEffect(() => {
                     </Link>
                   </div>
                   <div className="product-wrap">
-                    <div className="empty-cart">
-                      <div className="fs-24 mb-1">
-                        <i className="ti ti-shopping-cart" />
-                      </div>
-                      <p className="fw-bold">No Products Selected</p>
-                    </div>
-                    <div className="product-list align-items-center justify-content-between">
-                      <div
-                        className="d-flex align-items-center product-info"
-                        data-bs-toggle="modal"
-                        data-bs-target="#products"
-                      >
-                        <Link to="#" className="pro-img">
-                          <ImageWithBasePath
-                            src="assets/img/products/pos-product-16.png"
-                            alt="Products"
-                          />
-                        </Link>
-                        <div className="info">
-                          <span>PT0005</span>
-                          <h6>
-                            <Link to="#">Red Nike Laser</Link>
-                          </h6>
-                          <p className="fw-bold text-teal">$2000</p>
+                
+                  
+                    {
+                      serverCart?.length > 0 ? (
+                        serverCart?.map((item)=> {
+                      
+                        return(
+                          <div className="product-list align-items-center justify-content-between" key={item?.product?._id}>
+                          <div
+                            className="d-flex align-items-center product-info"
+                            data-bs-toggle="modal"
+                            data-bs-target="#products"
+                          >
+                            <Link to="#" className="pro-img">
+                              <ImageWithBasePath
+                                src={item?.product?.image?.[0]}
+                                alt={item?.product?.productName}
+                               
+                              />
+                            </Link>
+                            <div className="info">
+                              <span>{item?.product?.sku}</span>
+                              <h6>
+                                <Link to="#">{item?.product?.productName}</Link>
+                              </h6>
+                              <p className="fw-bold text-teal">{item?.saleRate}</p>
+                            </div>
+                          </div>
+                          <div className="qty-item text-center">
+                            
+                            <Pos2Counter  productId={item.product._id} 
+  initialQuantity={item.quantity} />
+                          </div>
+                          <div className="d-flex align-items-center action">
+                            <Link
+                              className="btn-icon delete-icon"
+                              to="#"
+                              onClick={()=> handleRemoveFromCart(item?.product?._id)}
+                            >
+                              <Trash2 className="feather-14" />
+                            </Link>
+                          </div>
                         </div>
-                      </div>
-                      <div className="qty-item text-center">
-                        <CounterTwo defaultValue={3}/>
-                      </div>
-                      <div className="d-flex align-items-center action">
-                        <Link
-                          className="btn-icon edit-icon me-1"
-                          to="#"
-                          data-bs-toggle="modal"
-                          data-bs-target="#edit-product"
-                        >
-                          <Edit className="feather-14" />
-                        </Link>
-                        <Link
-                          className="btn-icon delete-icon"
-                          to="#"
-                          data-bs-toggle="modal"
-                          data-bs-target="#delete"
-                        >
-                          <Trash2 className="feather-14" />
-                        </Link>
-                      </div>
-                    </div>
-                    <div className="product-list align-items-center justify-content-between">
-                      <div
-                        className="d-flex align-items-center product-info"
-                        data-bs-toggle="modal"
-                        data-bs-target="#products"
-                      >
-                        <Link to="#" className="pro-img">
-                          <ImageWithBasePath
-                            src="assets/img/products/pos-product-17.png"
-                            alt="Products"
-                          />
-                        </Link>
-                        <div className="info">
-                          <span>PT0235</span>
-                          <h6>
-                            <Link to="#">Iphone 14</Link>
-                          </h6>
-                          <p className="fw-bold text-teal">$3000</p>
+                        )
+                       })
+                      ) : ( <div className="empty-cart">
+                        <div className="fs-24 mb-1">
+                          <i className="ti ti-shopping-cart" />
                         </div>
-                      </div>
-                      <div className="qty-item text-center">
-                        <CounterTwo defaultValue={1}/>
-                      </div>
-                      <div className="d-flex align-items-center action">
-                        <Link
-                          className="btn-icon edit-icon me-1"
-                          to="#"
-                          data-bs-toggle="modal"
-                          data-bs-target="#edit-product"
-                        >
-                          <Edit className="feather-14" />
-                        </Link>
-                        <Link
-                          className="btn-icon delete-icon"
-                          to="#"
-                          data-bs-toggle="modal"
-                          data-bs-target="#delete"
-                        >
-                          <Trash2 className="feather-14" />
-                        </Link>
-                      </div>
-                    </div>
-                    <div className="product-list align-items-center justify-content-between">
-                      <div
-                        className="d-flex align-items-center product-info"
-                        data-bs-toggle="modal"
-                        data-bs-target="#products"
-                      >
-                        <Link to="#" className="pro-img">
-                          <ImageWithBasePath
-                            src="assets/img/products/pos-product-09.svg"
-                            alt="Products"
-                          />
-                        </Link>
-                        <div className="info">
-                          <span>PT0242</span>
-                          <h6>
-                            <Link to="#">Timex Black Silver</Link>
-                          </h6>
-                          <p className="fw-bold text-teal">$1457</p>
-                        </div>
-                      </div>
-                      <div className="qty-item text-center">
-                      <CounterTwo defaultValue={4}/>
-                      </div>
-                      <div className="d-flex align-items-center action">
-                        <Link
-                          className="btn-icon edit-icon me-1"
-                          to="#"
-                          data-bs-toggle="modal"
-                          data-bs-target="#edit-product"
-                        >
-                          <Edit className="feather-14" />
-                        </Link>
-                        <Link
-                          className="btn-icon delete-icon"
-                          to="#"
-                          data-bs-toggle="modal"
-                          data-bs-target="#delete"
-                        >
-                          <Trash2 className="feather-14" />
-                        </Link>
-                      </div>
-                    </div>
-                    <div className="product-list align-items-center justify-content-between">
-                      <div
-                        className="d-flex align-items-center product-info"
-                        data-bs-toggle="modal"
-                        data-bs-target="#products"
-                      >
-                        <Link to="#" className="pro-img">
-                          <ImageWithBasePath
-                            src="assets/img/products/pos-product-08.svg"
-                            alt="Products"
-                          />
-                        </Link>
-                        <div className="info">
-                          <span>PT0005</span>
-                          <h6>
-                            <Link to="#">SWAGME</Link>
-                          </h6>
-                          <p className="fw-bold text-teal">$6587</p>
-                        </div>
-                      </div>
-                      <div className="qty-item text-center">
-                      <CounterTwo defaultValue={4}/>
-                      </div>
-                      <div className="d-flex align-items-center action">
-                        <Link
-                          className="btn-icon edit-icon me-1"
-                          to="#"
-                          data-bs-toggle="modal"
-                          data-bs-target="#edit-product"
-                        >
-                          <Edit className="feather-14" />
-                        </Link>
-                        <Link
-                          className="btn-icon delete-icon"
-                          to="#"
-                          data-bs-toggle="modal"
-                          data-bs-target="#delete"
-                        >
-                          <Trash2 className="feather-14" />
-                        </Link>
-                      </div>
-                    </div>
+                        <p className="fw-bold">No Products Selected</p>
+                      </div> )
+                    }
+                  
+               
                   </div>
                 </div>
+  
                 <div className="block-section">
-                  <div className="selling-info">
+                  {/* <div className="selling-info">
                     <div className="row g-3">
                       <div className="col-12 col-sm-4">
                         <div>
@@ -1189,33 +471,33 @@ useEffect(() => {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
                   <div className="order-total">
                     <table className="table table-responsive table-borderless">
                       <tbody>
                         <tr>
                           <td>Sub Total</td>
-                          <td className="text-end">$60,454</td>
+                          <td className="text-end">Rs {amount?.subtotal}</td>
                         </tr>
                         <tr>
-                          <td>Tax (GST 5%)</td>
-                          <td className="text-end">$40.21</td>
+                          <td>Tax (GST )</td>
+                          <td className="text-end">Rs {amount?.tax}</td>
                         </tr>
-                        <tr>
+                        {/* <tr>
                           <td>Shipping</td>
                           <td className="text-end">$40.21</td>
-                        </tr>
+                        </tr> */}
                         <tr>
                           <td>Sub Total</td>
-                          <td className="text-end">$60,454</td>
+                          <td className="text-end">Rs {amount?.subtotal}</td>
                         </tr>
                         <tr>
-                          <td className="text-danger">Discount (10%)</td>
-                          <td className="text-danger text-end">$15.21</td>
+                          <td className="text-danger">Total Savings </td>
+                          <td className="text-danger text-end">Rs {amount?.discount}</td>
                         </tr>
                         <tr>
                           <td>Total</td>
-                          <td className="text-end">$64,024.5</td>
+                          <td className="text-end">Rs {amount?.total}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -1224,17 +506,7 @@ useEffect(() => {
                 <div className="block-section payment-method">
                   <h4>Payment Method</h4>
                   <div className="row align-items-center justify-content-center methods g-3">
-                    <div className="col-sm-6 col-md-4">
-                      <Link
-                        to="#"
-                        className="payment-item"
-                        data-bs-toggle="modal"
-                        data-bs-target="#payment-cash"
-                      >
-                        <i className="ti ti-cash-banknote fs-18" />
-                        <span>Cash</span>
-                      </Link>
-                    </div>
+          
                     <div className="col-sm-6 col-md-4">
                       <Link
                         to="#"
@@ -1254,7 +526,7 @@ useEffect(() => {
                         data-bs-target="#scan-payment"
                       >
                         <i className="ti ti-scan fs-18" />
-                        <span>Scan</span>
+                        <span>UPI</span>
                       </Link>
                     </div>
                   </div>
@@ -1263,8 +535,10 @@ useEffect(() => {
                   <Link
                     className="btn btn-secondary w-100"
                     to="#"
+                      data-bs-target="#print-receipt"
+                      data-bs-toggle="modal"
                   >
-                    Grand Total : $64,024.5
+                    Grand Total : Rs {amount?.total}
                   </Link>
                 </div>
                 <div className="btn-row d-sm-flex align-items-center justify-content-between">
@@ -1288,19 +562,216 @@ useEffect(() => {
                     to="#"
                     className="btn btn-success d-flex align-items-center justify-content-center flex-fill"
                     data-bs-toggle="modal"
-                    data-bs-target="#payment-completed"
+                    // data-bs-target="#payment-completed"
+                     data-bs-target="#hold-order"
+                                       
                   >
                     <i className="ti ti-cash-banknote me-1" />
                     Payment
                   </Link>
                 </div>
+                
               </aside>
             </div>
-            {/* /Order Details */}
           </div>
         </div>
       </div>
-      <PosModals/>
+      {/* <PosModals/> */}
+      <div
+    className="modal fade modal-default"
+    id="delete"
+    aria-labelledby="payment-completed"
+  >
+    <div className="modal-dialog modal-dialog-centered">
+      <div className="modal-content">
+        <div className="modal-body p-0">
+          <div className="success-wrap text-center">
+            <form >
+              <div className="icon-success bg-danger-transparent text-danger mb-2">
+                <i className="ti ti-trash" />
+              </div>
+              <h3 className="mb-2">Are you Sure!</h3>
+              <p className="fs-16 mb-3">
+                The current order will be deleted as no payment has been made so
+                far.
+              </p>
+              <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  className="btn btn-md btn-secondary"
+                  data-bs-dismiss="modal"
+                >
+                  No, Cancel
+                </button>
+                <button type="button" data-bs-dismiss="modal" className="btn btn-md btn-primary" onClick={handleEmptyCart}>
+                  Yes, Delete
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {/* Print Receipt */}
+    <div
+      className="modal fade modal-default"
+      id="print-receipt"
+      aria-labelledby="print-receipt"
+    >
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-body">
+            <div className="icon-head text-center">
+              <Link to="#">
+                <ImageWithBasePath
+                  src="assets/img/logo.png"
+                  width={100}
+                  height={30}
+                  alt="Receipt Logo"
+                />
+              </Link>
+            </div>
+            <div className="text-center info text-center">
+              <h6>Dreamguys Technologies Pvt Ltd.,</h6>
+              <p className="mb-0">Phone Number: +1 5656665656</p>
+              <p className="mb-0">
+                Email: <Link to="mailto:example@gmail.com">example@gmail.com</Link>
+              </p>
+            </div>
+            <div className="tax-invoice">
+              <h6 className="text-center">Tax Invoice</h6>
+              <div className="row">
+                <div className="col-sm-12 col-md-6">
+                  <div className="invoice-user-name">
+                    <span>Name: </span>John Doe
+                  </div>
+                  <div className="invoice-user-name">
+                    <span>Invoice No: </span>CS132453
+                  </div>
+                </div>
+                <div className="col-sm-12 col-md-6">
+                  <div className="invoice-user-name">
+                    <span>Customer Id: </span>#LL93784
+                  </div>
+                  <div className="invoice-user-name">
+                    <span>Date: </span>01.07.2022
+                  </div>
+                </div>
+              </div>
+            </div>
+            <table className="table-borderless w-100 table-fit">
+              <thead>
+                <tr>
+                  <th># Item</th>
+                  <th>Price</th>
+                  <th>Qty</th>
+                  <th className="text-end">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {
+                  serverCart?.length > 0 ? (
+                    serverCart?.map((item , index)=> {
+                      
+                      return(   <tr key={item?.productName}>
+                        <td>{index+1}. {item?.productName}</td>
+                        <td>{item?.saleRate}</td>
+                        <td>{item?.quantity}</td>
+                        <td className="text-end">{item?.saleRate * item?.quantity}</td>
+                      </tr>)
+                 
+                })) : ( <div className="empty-cart">
+                    <div className="fs-24 mb-1">
+                      <i className="ti ti-shopping-cart" />
+                    </div>
+                    <p className="fw-bold">No Products Selected</p>
+                  </div> )
+                }
+            <tr>
+                          <td>Sub Total</td>
+                          <td className="text-end">Rs {amount?.subtotal}</td>
+                        </tr>
+                        <tr>
+                          <td>Tax (GST )</td>
+                          <td className="text-end">Rs {amount?.tax}</td>
+                        </tr>
+                        {/* <tr>
+                          <td>Shipping</td>
+                          <td className="text-end">$40.21</td>
+                        </tr> */}
+                        <tr>
+                          <td>Sub Total</td>
+                          <td className="text-end">Rs {amount?.subtotal}</td>
+                        </tr>
+                        <tr>
+                          <td className="text-danger">Total Savings </td>
+                          <td className="text-danger text-end">Rs {amount?.discount}</td>
+                        </tr>
+                        <tr>
+                          <td>Total</td>
+                          <td className="text-end">Rs {amount?.total}</td>
+                        </tr>
+                <tr>
+                  <td colSpan={4}>
+                    <table className="table-borderless w-100 table-fit">
+                      <tbody>
+                        <tr>
+                          <td className="fw-bold">Sub Total :</td>
+                          <td className="text-end"> Rs {amount?.subtotal}</td>
+                        </tr>
+                        <tr>
+                          <td className="fw-bold">Savings :</td>
+                          <td className="text-end">-Rs {amount?.discount}</td>
+                        </tr>
+                        {/* <tr>
+                          <td className="fw-bold">Shipping :</td>
+                          <td className="text-end">0.00</td>
+                        </tr> */}
+                        <tr>
+                          <td className="fw-bold">Tax (GST) :</td>
+                          <td className="text-end">Rs {amount?.tax}</td>
+                        </tr>
+                        <tr>
+                          <td className="fw-bold">Total Bill :</td>
+                          <td className="text-end">Rs {amount?.total}</td>
+                        </tr>
+                        <tr>
+                          <td className="fw-bold">Due :</td>
+                          <td className="text-end">$0.00</td>
+                        </tr>
+                        <tr>
+                          <td className="fw-bold">Total Payable :</td>
+                          <td className="text-end">Rs {amount?.total}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div className="text-center invoice-bar">
+              <div className="border-bottom border-dashed">
+                <p>
+                  **VAT against this challan is payable through central
+                  registration. Thank you for your business!
+                </p>
+              </div>
+              <Link to="#">
+                <ImageWithBasePath src="assets/img/barcode/barcode-03.jpg" alt="Barcode" />
+              </Link>
+              <p className="text-dark fw-bold">Sale 31</p>
+              <p>Thank You For Shopping With Us. Please Come Again</p>
+              <Link to="#" className="btn btn-md btn-primary">
+                Print Receipt
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {/* /Print Receipt */}
+    {/* Products */}
     </div>
   );
 };

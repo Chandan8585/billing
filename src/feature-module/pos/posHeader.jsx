@@ -6,7 +6,16 @@ import { all_routes } from '../../Router/all_routes';
 import { Settings, User } from 'feather-icons-react/build/IconComponents';
 
 const PosHeader = () => {
+    const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
 
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setCurrentTime(new Date().toLocaleTimeString());
+      }, 1000);
+    
+      return () => clearInterval(interval);
+    }, []);
+    
     const [isFullscreen, setIsFullscreen] = useState(false);
 
     const toggleFullscreen = (elem) => {
@@ -105,7 +114,7 @@ const PosHeader = () => {
                                 alt="img"
                                 className="me-2"
                             />
-                            09:25:32
+                           {currentTime}
                         </span>
                     </li>
                     {/* /Search */}

@@ -74,7 +74,7 @@ const ProductList = () => {
     },
     {
       title: "Product Name",
-      dataIndex: "name",
+      dataIndex: "productName",
       sorter: (a, b) => a.brand.length - b.brand.length,
     },
     {
@@ -91,7 +91,7 @@ const ProductList = () => {
     },
     {
       title: "Price",
-      dataIndex: "price",
+      dataIndex: "saleRate",
       sorter: (a, b) => a.price.length - b.price.length,
     },
     {
@@ -107,8 +107,8 @@ const ProductList = () => {
     {
       title: "Created By",
       dataIndex: "createdBy",
-      render: (createdBy) => createdBy?.firstName || '', 
-      sorter: (a, b) => (a.createdBy?.firstName || '').length - (b.createdBy?.firstName || '').length,
+      render: (createdBy) => createdBy?.firstName || 'Admin', 
+      sorter: (a, b) => (a.createdBy?.firstName || 'Admin').length - (b.createdBy?.firstName || '').length,
     },
     {
       title: "Action",

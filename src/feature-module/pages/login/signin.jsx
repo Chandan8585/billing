@@ -1,15 +1,57 @@
 import React, { useState } from "react";
 import ImageWithBasePath from "../../../core/img/imagewithbasebath";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { all_routes } from "../../../Router/all_routes";
+import axios from "axios";
+// import { toast } from "react-toastify";
+import { base_url } from "../../../environment";
+import { useLoginUserMutation } from "../../../core/redux/api/userApi";
 
 const Signin = () => {
+  const [loginUser, { isLoading }] = useLoginUserMutation();
   const [isPasswordVisible, setPasswordVisible] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const route = all_routes;
 
   const togglePasswordVisibility = () => {
     setPasswordVisible((prevState) => !prevState);
   };
-  const route = all_routes;
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+  
+    try {
+      // Using the RTK Query mutation
+      const response = await loginUser({
+        email: formData.email,
+        password: formData.password,
+      }).unwrap(); // Important: unwrap() to get the actual response or throw an error
+  
+      // Handle successful login
+      navigate(route.dashboard);
+    } catch (error) {
+      console.error("Login error:", error);
+      const errorMessage = error.data?.message || "Login failed. Please try again.";
+      // toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const routes = all_routes
   return (
     <>
       {/* Main Wrapper */}
@@ -17,7 +59,7 @@ const Signin = () => {
         <div className="account-content">
           <div className="login-wrapper bg-img">
             <div className="login-content authent-content">
-              <form>
+              <form onSubmit={handleSubmit}>
                 <div className="login-userset">
                   <div className="login-logo logo-normal">
                     <ImageWithBasePath src="assets/img/logo.png" alt="img" />
@@ -32,36 +74,44 @@ const Signin = () => {
                     </h4>
                   </div>
                   <div className="mb-3">
-                    <label className="form-label">
-                      Email <span className="text-danger"> *</span>
-                    </label>
-                    <div className="input-group">
-                      <input
-                        type="text"
-                        defaultValue=""
-                        className="form-control border-end-0"
-                      />
-                      <span className="input-group-text border-start-0">
-                        <i className="ti ti-mail" />
-                      </span>
-                    </div>
+                  <label className="form-label">
+                    Email <span className="text-danger"> *</span>
+                  </label>
+                  <div className="input-group">
+                    <input
+                      type="text"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="form-control border-end-0"
+                      required
+                    />
+                    <span className="input-group-text border-start-0">
+                      <i className="ti ti-mail" />
+                    </span>
                   </div>
-                  <div className="mb-3">
-                    <label className="form-label">
-                      Password <span className="text-danger"> *</span>
-                    </label>
-                    <div className="pass-group">
-                      <input
-                        type={isPasswordVisible ? "text" : "password"}
-                        className="pass-input form-control"
-                      />
-                      <span
-                        className={`ti toggle-password ${isPasswordVisible ? "ti-eye" : "ti-eye-off"
-                          }`}
-                        onClick={togglePasswordVisibility}
-                      ></span>
-                    </div>
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">
+                    Password <span className="text-danger"> *</span>
+                  </label>
+                  <div className="pass-group">
+                    <input
+                      type={isPasswordVisible ? "text" : "password"}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      className="pass-input form-control"
+                      required
+                    />
+                    <span
+                      className={`ti toggle-password ${
+                        isPasswordVisible ? "ti-eye" : "ti-eye-off"
+                      }`}
+                      onClick={togglePasswordVisibility}
+                    ></span>
                   </div>
+                </div>
                   <div className="form-login authentication-check">
                     <div className="row">
                       <div className="col-12 d-flex align-items-center justify-content-between">
@@ -84,10 +134,14 @@ const Signin = () => {
                     </div>
                   </div>
                   <div className="form-login">
-                    <Link to={route.newdashboard} className="btn btn-primary w-100">
-                      Sign In
-                    </Link>
-                  </div>
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary w-100"
+                    disabled={loading}
+                  >
+                    {loading ? "Signing In..." : "Sign In"}
+                  </button>
+                </div>
                   <div className="signinform">
                     <h4>
                       New on our platform?
@@ -141,7 +195,7 @@ const Signin = () => {
                     </div>
                   </div>
                   <div className="my-4 d-flex justify-content-center align-items-center copyright-text">
-                    <p>Copyright © 2025 DreamsPOS</p>
+                    <p>Copyright © 2025 AERO PACK POS</p>
                   </div>
                 </div>
               </form>
@@ -149,7 +203,7 @@ const Signin = () => {
           </div>
         </div>
       </div>
-      {/* /Main Wrapper */}
+  
     </>
 
   );
