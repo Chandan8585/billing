@@ -16,7 +16,6 @@ const rootReducer = (state = initialState, action) => {
       return { ...state, saleshdashboard_recenttransaction: action.payload };
     case "Brand_list":
       return { ...state, brand_list: action.payload };
-
     case "Unit_Data":
       return { ...state, unit_data: action.payload };
     case "Variantattribute_Data":

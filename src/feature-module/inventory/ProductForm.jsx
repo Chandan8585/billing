@@ -64,7 +64,7 @@ const ProductForm = ({isEditMode}) => {
   const [subCategoryOptions, setsubCategoryOptions] = useState([]);
   const { data: stores, isLoading, error } = useGetStoreListQuery();
   const { data: category, isLoading: categoryLoading, error: categoryError } = useGetCategoryListQuery(); 
-  const { 
+  const {
     data: skuId, 
     isLoading: isSkuLoading, 
   } = useGetNewSkuIdQuery();
@@ -168,14 +168,14 @@ const ProductForm = ({isEditMode}) => {
   const [product, setProduct] = useState(false);
   const [product2, setProduct2] = useState(true);
   
-  const storeOptions = stores?.map(store => ({
-    value: store.store,
-    label: store.store
-  })) || [];
-  const warehouse = stores?.map(store => ({
-    value: store.warehouse,
-    label: store.warehouse
-  })) || [];
+  // const storeOptions = stores?.map(store => ({
+  //   value: store.store,
+  //   label: store.store
+  // })) || [];
+  // const warehouse = stores?.map(store => ({
+  //   value: store.warehouse,
+  //   label: store.warehouse
+  // })) || [];
 
   const categoryOptions = category?.map(cat => ({
     value: cat?._id,
@@ -325,7 +325,7 @@ const handleCheckboxChange = (e) => {
                       aria-labelledby="headingSpacingOne"
                     >
                       <div className="accordion-body border-top">
-                        <div className="row">
+                        {/* <div className="row">
                           <div className="col-sm-6 col-12">
                             <div className="mb-3">
                               <label className="form-label">
@@ -361,7 +361,7 @@ const handleCheckboxChange = (e) => {
                               />
                             </div>
                           </div>
-                        </div>
+                        </div> */}
                         <div className="row">
                           <div className="col-sm-6 col-12">
                             <div className="mb-3">
@@ -374,7 +374,7 @@ const handleCheckboxChange = (e) => {
                           <div className="col-sm-6 col-12">
                             <div className="mb-3">
                               <label className="form-label">
-                                HSN Code<span className="text-danger ms-1">*</span>
+                                HSN Code<span className="text-danger ms-1"></span>
                               </label>
                               <input type="text" className="form-control"  name="hsnCode"  onChange={ handleInputChange} value={formData.hsnCode}/>
                             </div>
@@ -1023,7 +1023,8 @@ const handleCheckboxChange = (e) => {
                                   </div>
                                 </div>
                               </div>
-                              {isImageVisible1 && (
+                              {
+                                isImageVisible1 && (
                                 <div className="phone-img">
                                   <ImageWithBasePath
                                     src="assets/img/products/phone-add-2.png"

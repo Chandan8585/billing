@@ -1,14 +1,115 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ImageWithBasePath from "../../core/img/imagewithbasebath";
 import { Link } from "react-router-dom";
 import CommonFooter from "../../core/common/footer/commonFooter";
+import { useSelector } from "react-redux";
+import { useUserProfileUpdateMutation } from "../../core/redux/api/userApi";
+const Profile = () => { 
+  const user = useSelector((state) => state.user.user);
+  const [modifiedFields, setModifiedFields] = useState({});
+  const [imageFile, setImageFile] = useState(null);
+  const initialFormState = {
+    firstName: user.firstName || '',
+    lastName: user.lastName || '',
+    Address: user.Address || '',
+    mobile: user.mobile || '',
+    userName: user.userName || '',
+    photoUrl: user.photoUrl || ''
+  }
 
-const Profile = () => {
+  // When component mounts or user changes
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        Address: user.Address || '',
+        mobile: user.mobile || '',
+        userName: user.userName || '',
+        photoUrl: user.photoUrl || ''
+      });
+      setSelectedImage(user.photoUrl || null);
+      setModifiedFields({});
+      setImageFile(null);
+    }
+  }, [user]);
+  const [updateProfile, {isLoading: isUpdating}] = useUserProfileUpdateMutation();
+  const [formData, setFormData] = useState(initialFormState);
+  const [selectedImage, setSelectedImage] = useState(formData.photoUrl || null);
+  console.log("user useSelector", user);
+
+  console.log("user",user.email);
   const [isPasswordVisible, setPasswordVisible] = useState(false);
-
+  
   const togglePasswordVisibility = () => {
     setPasswordVisible((prevState) => !prevState);
   };
+  const handleRemoveImage = () => {
+    setSelectedImage(''); 
+  }
+
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setModifiedFields(prev => ({ ...prev, [name]: true }));
+  };
+  const handleSubmit = async () => {
+    try {
+      const formDataToSend = new FormData();
+      
+      // Only append modified fields
+      Object.keys(modifiedFields).forEach(key => {
+        if (modifiedFields[key] && formData[key] !== undefined) {
+          formDataToSend.append(key, formData[key]);
+        }
+      });
+      
+      // Append the image file if it exists
+      if (imageFile) {
+        formDataToSend.append('Image', imageFile);
+        // Ensure photoUrl is marked as modified
+        if (!modifiedFields.photoUrl) {
+          formDataToSend.append('photoUrl', '');
+        }
+      }
+      
+      // Only proceed if there are actual changes
+      if (formDataToSend.entries().next().done && !imageFile) {
+        alert('No changes detected');
+        return;
+      }
+      
+      // Call the mutation
+      await updateProfile(formDataToSend).unwrap();
+      
+      // Show success message
+      alert('Profile updated successfully!');
+      
+      // Reset modified fields after successful update
+      setModifiedFields({});
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      alert(error?.data?.message || 'Failed to update profile. Please try again.');
+    }
+  };
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file && (file.type === "image/jpeg" || file.type === "image/png")) {
+      if (file.size <= 2 * 1024 * 1024) {
+        const imageUrl = URL.createObjectURL(file);
+        setSelectedImage(imageUrl);
+        setImageFile(file);
+        setModifiedFields(prev => ({ ...prev, photoUrl: true })); // Mark photo as modified
+      } else {
+        alert("File must be less than 2MB.");
+      }
+    } else {
+      alert("Only JPG and PNG files are allowed.");
+    }
+  };
+  
+  console.log("formdata", formData.photoUrl);
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -29,19 +130,27 @@ const Profile = () => {
               Basic Information
             </h5>
             <div className="profile-pic-upload image-field">
-              <div className="profile-pic p-2">
+            <div className="profile-pic p-2">
+            {selectedImage ? (
+                <img
+                  src={selectedImage}
+                  alt="User"
+                  className="object-fit-cover h-100 rounded-1"
+                />
+              ) : (
                 <ImageWithBasePath
                   src="./assets/img/users/user-49.png"
+                  alt="Default"
                   className="object-fit-cover h-100 rounded-1"
-                  alt="user"
                 />
-                <button type="button" className="close rounded-1">
+              )}
+                <button type="button" className="close rounded-1" onClick={handleRemoveImage}>
                   <span aria-hidden="true">×</span>
                 </button>
               </div>
               <div className="mb-3">
                 <div className="image-upload mb-0 d-inline-flex">
-                  <input type="file" />
+                  <input type="file" accept="image/png, image/jpeg image" onChange={handleImageChange}/>
                   <div className="btn btn-primary fs-13">Change Image</div>
                 </div>
                 <p className="mt-2">
@@ -59,6 +168,9 @@ const Profile = () => {
                     type="text"
                     className="form-control"
                     defaultValue="Jeffry"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={ handleInputChange} 
                   />
                 </div>
               </div>
@@ -71,30 +183,9 @@ const Profile = () => {
                     type="text"
                     className="form-control"
                     defaultValue="Jordan"
-                  />
-                </div>
-              </div>
-              <div className="col-lg-6 col-sm-12">
-                <div className="mb-3">
-                  <label>
-                    Email<span className="text-danger ms-1">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    defaultValue="jeffry@example.com"
-                  />
-                </div>
-              </div>
-              <div className="col-lg-6 col-sm-12">
-                <div className="mb-3">
-                  <label className="form-label">
-                    Phone Number<span className="text-danger ms-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue={+17468314286}
-                    className="form-control"
+                    value={formData.lastName}
+                    name="lastName"
+                    onChange={handleInputChange}
                   />
                 </div>
               </div>
@@ -107,10 +198,56 @@ const Profile = () => {
                     type="text"
                     className="form-control"
                     defaultValue="Jeffry Jordan"
+                    value={formData.userName}
+                    onChange={ handleInputChange} 
                   />
                 </div>
               </div>
               <div className="col-lg-6 col-sm-12">
+                <div className="mb-3">
+                  <label>
+                    Email<span className="text-danger ms-1">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    defaultValue="jeffry@example.com"
+                    value={user.email}
+                  
+                    readOnly
+                  />
+                </div>
+              </div>
+              <div className="col-lg-6 col-sm-12">
+                <div className="mb-3">
+                  <label>
+                    Addres<span className="text-danger ms-1">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    defaultValue="jeffry@example.com"
+                    value={formData.Address}
+                    onChange={ handleInputChange} 
+                  />
+                </div>
+              </div>
+              <div className="col-lg-6 col-sm-12">
+                <div className="mb-3">
+                  <label className="form-label">
+                    Phone Number<span className="text-danger ms-1">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    defaultValue={+17468314286}
+                    className="form-control"
+                    value={formData.mobile}
+                    onChange={ handleInputChange} 
+                  />
+                </div>
+              </div>
+            
+              {/* <div className="col-lg-6 col-sm-12">
                 <div className="mb-3">
                   <label className="form-label">
                     Password<span className="text-danger ms-1">*</span>
@@ -128,7 +265,7 @@ const Profile = () => {
                   </div>
 
                 </div>
-              </div>
+              </div> */}
               <div className="col-12 d-flex justify-content-end">
                 <Link
                   to="#"
@@ -139,6 +276,7 @@ const Profile = () => {
                 <Link
                   to="#"
                   className="btn btn-primary shadow-none"
+                  onClick={handleSubmit}
                 >
                   Save Changes
                 </Link>

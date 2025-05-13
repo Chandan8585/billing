@@ -70,8 +70,7 @@ export const productApi = createApi({
         method: 'DELETE',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Product', id }],
-    }),
-   
+    }),   
     filterProduct: builder.query({
       query: (args) => {  // Take the whole args object
       
@@ -113,12 +112,5 @@ export const {
     useUpdateProductMutation,
     useDeleteProductMutation,
     useGetProductListQuery,
-    // Cart hooks
-    useGetCartQuery,
-    useAddToCartMutation,
-    useIncreaseCartQuantityMutation,
-    useDecreaseCartQuantityMutation,
-    useRemoveFromCartMutation,
-    useGetCartTotalsQuery,
   } = productApi;
   

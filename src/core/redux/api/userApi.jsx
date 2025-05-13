@@ -1,6 +1,6 @@
 // src/store/api/cartApi.js
 import { productApi } from './productApi';
-
+import { setUser } from '../slice/userSlice';
 const extendedUserApi = productApi.injectEndpoints({
   endpoints: (builder) => ({
     userProfile: builder.query({
@@ -13,6 +13,15 @@ const extendedUserApi = productApi.injectEndpoints({
         method: 'POST',
         body: { email, password },
       }),
+      async onQueryStarted(args, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          // Optionally store user data in Redux if needed
+          dispatch(setUser(data.user));
+        } catch (error) {
+          console.error('Login failed:', error);
+        }
+      },
       invalidatesTags: ['User'],
     }),
     signUpUser: builder.mutation({
@@ -24,9 +33,10 @@ const extendedUserApi = productApi.injectEndpoints({
       invalidatesTags: ['User'],
     }),
     userProfileUpdate: builder.mutation({
-      query: (productId) => ({
-        url: `/cart`,
-        method: 'POST',
+      query: (formData) => ({
+        url: `/user/profile`,
+        method: 'PATCH',
+        body: formData
       }),
       invalidatesTags: ['User'],
     }),
@@ -50,4 +60,5 @@ export const {
   useSignUpUserMutation,
   useRemoveFromUserMutation,
   useGetUserTotalsQuery,
+  useUserProfileUpdateMutation
 } = extendedUserApi;
