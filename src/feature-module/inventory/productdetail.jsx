@@ -23,7 +23,7 @@ const ProductDetail = () => {
                 <div className="content">
                     <div className="page-header">
                         <div className="page-title">
-                            <h4>Product Details</h4>
+                            <h4>About {currentProduct?.productName}</h4>
                             <h6>Full details of a product</h6>
                         </div>
                     </div>
@@ -32,21 +32,25 @@ const ProductDetail = () => {
                         <div className="col-lg-8 col-sm-12">
                             <div className="card">
                                 <div className="card-body">
-                                    <div className="bar-code-view">
+                                    {/* <div className="bar-code-view">
                                         <ImageWithBasePath src="assets/img/barcode/barcode1.png" alt="barcode" />
                                         <a className="printimg">
                                             <ImageWithBasePath src="assets/img/icons/printer.svg" alt="print" />
                                         </a>
-                                    </div>
+                                    </div> */}
                                     <div className="productdetails">
                                     <ul className="product-bar">
-                                    <li>
+                                        <li>
+                                        <h4>Product Id</h4>
+                                        <h6>{currentProduct?.productId || 'N/A'}</h6>
+                                        </li>
+                                        <li>
                                         <h4>SKU</h4>
                                         <h6>{currentProduct?.sku || 'N/A'}</h6>
                                         </li>
                                         <li>
                                         <h4>Product</h4>
-                                        <h6>{currentProduct?.name}</h6>
+                                        <h6>{currentProduct?.productName}</h6>
                                         </li>
                                         <li>
                                         <h4>Category</h4>
@@ -65,11 +69,11 @@ const ProductDetail = () => {
 
                                         <li>
                                         <h4>Brand</h4>
-                                        <h6>{currentProduct?.brand || 'None'}</h6>
+                                        <h6>{currentProduct?.brand?.brandName || 'None'}</h6>
                                         </li>
                                         <li>
                                         <h4>Unit</h4>
-                                        <h6>{currentProduct?.unit || 'pcs'}</h6>
+                                        <h6>{currentProduct?.unit?.unitName || 'pcs'}</h6>
                                         </li>
                                       
                                         <li>
@@ -95,7 +99,7 @@ const ProductDetail = () => {
                                         <li>
                                         <h4>Price</h4>
                                         <h6>
-                                            ₹{currentProduct?.price?.toFixed(2) || '0.00'} 
+                                            ₹{currentProduct?.saleRate?.toFixed(2) || '0.00'} 
                                             {currentProduct?.originalPrice && (
                                             <span className="text-muted ms-2">
                                                 <del>₹{currentProduct?.originalPrice.toFixed(2)}</del>

@@ -5,7 +5,7 @@ import { base_url } from '../../../environment.jsx';
 export const productApi = createApi({
   reducerPath: 'productApi',
   baseQuery: fetchBaseQuery({ baseUrl: base_url,  credentials: 'include',}),
-  tagTypes: ['Product', 'Category', 'Store', 'storeData', 'Sku', 'brand', 'unit', 'itemCode', 'warrantyList', 'Cart'],
+  tagTypes: ['Product', 'Category', 'Store', 'storeData', 'ProductId', 'brand', 'unit', 'itemCode', 'warrantyList', 'Cart'],
   endpoints: (builder) => ({
     getProductList: builder.query({
       query: ()=> `product/productList`,
@@ -16,10 +16,11 @@ export const productApi = createApi({
       transformResponse: (response) => response.data,
       providesTags: (result, error, id) => [{ type: 'Product', id }],
     }),
-    getNewSkuId: builder.query({
-      query: () => `product/generate-sku-code`,
-      transformResponse: (response) => response.code,
-      providesTags: ['Sku'],
+   
+    // In your API slice
+    getNewProductId: builder.query({
+      query: () => 'product/generateProductId',
+     // Adjust based on your backend
     }),
     getItemCode: builder.query({
       query: () => `product/generate-itemCode`,
@@ -30,12 +31,32 @@ export const productApi = createApi({
       providesTags: ['storeData'],
     }),
     getBrandList: builder.query({
-      query: () => 'brandlist',
+      query: () => '/product/brand',
+      // transformResponse: (response) => response.data,
+      // console.log(response);
       providesTags: ['brand'],
     }),
+    createBrand: builder.mutation({
+         query: (newBrand) => ({
+        url: '/product/addNewBrand',
+        method: 'POST',
+        body: newBrand,
+      }),
+      invalidatesTags: ['Product'],
+    }),
+   
     getUnitList: builder.query({
-      query: () => 'unitlist',
+      query: () => '/product/unit',
+      transformResponse: (response) => response.data,
       providesTags: ['unit'],
+    }),
+    createUnit: builder.mutation({
+      query: (newUnit) => ({
+        url: '/product/addNewUnit',
+        method: 'POST',
+        body: newUnit,
+      }),
+      invalidatesTags: ['unit'],
     }),
     getTypeOfWarrantyList: builder.query({
       query: () => 'warrantylist',
@@ -47,6 +68,14 @@ export const productApi = createApi({
     }),
     getCategoryList: builder.query({
       query: () => '/category',
+    }),
+    createCategory: builder.mutation({
+         query: (category) => ({
+        url: '/category/add-category',
+        method: 'POST',
+        body: category,
+      }),
+      invalidatesTags: ['category'],
     }),
     createProduct: builder.mutation({
       query: (newProduct) => ({
@@ -66,7 +95,7 @@ export const productApi = createApi({
     }),
     deleteProduct: builder.mutation({
       query: (id) => ({
-        url: `product/productList/${id}`,
+        url: `product/product/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Product', id }],
@@ -106,9 +135,13 @@ export const {
     useGetStoreListQuery,
     useGetBrandListQuery,
     useGetCategoryListQuery,
-    useGetNewSkuIdQuery,
+    useCreateCategoryMutation,
+    useGetNewProductIdQuery,
     useFilterProductQuery,
     useCreateProductMutation,
+    useCreateBrandMutation,
+    useCreateUnitMutation,
+    useGetUnitListQuery,
     useUpdateProductMutation,
     useDeleteProductMutation,
     useGetProductListQuery,

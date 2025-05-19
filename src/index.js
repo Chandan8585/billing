@@ -33,7 +33,7 @@ if (rootElement) {
           <AllRoutes />
         </BrowserRouter>
       </Provider>
-      </QueryClientProvider>2
+      </QueryClientProvider>
     </React.StrictMode>
   );
 } else {

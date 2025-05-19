@@ -6,8 +6,10 @@ import axios from "axios";
 // import { toast } from "react-toastify";
 import { base_url } from "../../../environment";
 import { useLoginUserMutation } from "../../../core/redux/api/userApi";
-
+import { useDispatch } from 'react-redux';
+import { setUser } from '../../../core/redux/slice/userSlice';
 const Signin = () => {
+   const dispatch = useDispatch();
   const [loginUser, { isLoading }] = useLoginUserMutation();
   const [isPasswordVisible, setPasswordVisible] = useState(false);
   const [formData, setFormData] = useState({
@@ -42,6 +44,10 @@ const Signin = () => {
       }).unwrap(); // Important: unwrap() to get the actual response or throw an error
       // response
       // Handle successful login
+        dispatch(setUser({
+        user: response.user,
+        // token: response.token
+      }));
       navigate(route.dashboard);
     } catch (error) {
       console.error("Login error:", error);

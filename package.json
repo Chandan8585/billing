@@ -79,6 +79,7 @@
     "react-tag-input-component": "^2.0.2",
     "react-time-picker": "^7.0.0",
     "react-timepicker": "^2.0.2",
+    "react-to-print": "^3.1.0",
     "sass": "^1.86.3",
     "slick-carousel": "^1.8.1",
     "sweetalert2": "^11.15.10",

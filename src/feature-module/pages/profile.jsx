@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import CommonFooter from "../../core/common/footer/commonFooter";
 import { useSelector } from "react-redux";
 import { useUserProfileUpdateMutation } from "../../core/redux/api/userApi";
+import { City, State } from "../../core/common/selectOption/selectOption";
+import Select from "react-select";
 const Profile = () => { 
   const user = useSelector((state) => state.user.user);
   const [modifiedFields, setModifiedFields] = useState({});
@@ -139,7 +141,7 @@ const Profile = () => {
                 />
               ) : (
                 <ImageWithBasePath
-                  src="./assets/img/users/user-49.png"
+                  src="https://static.vecteezy.com/system/resources/thumbnails/020/911/740/small/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png"
                   alt="Default"
                   className="object-fit-cover h-100 rounded-1"
                 />
@@ -148,15 +150,19 @@ const Profile = () => {
                   <span aria-hidden="true">×</span>
                 </button>
               </div>
-              <div className="mb-3">
+               <div className="new-employee-field">
+              <div className="mb-0">
                 <div className="image-upload mb-0 d-inline-flex">
                   <input type="file" accept="image/png, image/jpeg image" onChange={handleImageChange}/>
-                  <div className="btn btn-primary fs-13">Change Image</div>
+                  <div className="image-uploads">
+                   <h4>Change Image</h4> 
+                  </div>
                 </div>
-                <p className="mt-2">
+                <p className="fs-13 fw-medium mt-2">
                   Upload an image below 2 MB, Accepted File format JPG, PNG
                 </p>
               </div>
+               </div>
             </div>
             <div className="row">
               <div className="col-lg-6 col-sm-12">
@@ -218,19 +224,61 @@ const Profile = () => {
                   />
                 </div>
               </div>
-              <div className="col-lg-6 col-sm-12">
-                <div className="mb-3">
-                  <label>
-                    Addres<span className="text-danger ms-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    defaultValue="jeffry@example.com"
+           
+               <div className="card-title-head">
+                  <h6 className="fs-16 fw-bold mb-3">
+                      <span className="fs-16 me-2">
+                          <i className="ti ti-map-pin" />
+                      </span>
+                      Address Information
+                  </h6>
+              </div>
+              <div className="row">
+                  <div className="col-md-12">
+                      <div className="mb-3">
+                          <label className="form-label">
+                              Address <span className="text-danger">*</span>
+                          </label>
+                          <input className="form-control"  type="text"
+                   
+                    // defaultValue=""
                     value={formData.Address}
-                    onChange={ handleInputChange} 
-                  />
-                </div>
+                    onChange={ handleInputChange} />
+                      </div>
+                  </div>
+{/*                  
+                  <div className="col-md-6">
+                      <div className="mb-3">
+                          <label className="form-label">
+                              State <span className="text-danger">*</span>
+                          </label>
+                          <Select
+                              classNamePrefix="react-select"
+                              options={State}
+                              placeholder="Choose"
+                          />
+                      </div>
+                  </div>
+                  <div className="col-md-6">
+                      <div className="mb-3">
+                          <label className="form-label">
+                              City <span className="text-danger">*</span>
+                          </label>
+                          <Select
+                              classNamePrefix="react-select"
+                              options={City}
+                              placeholder="Choose"
+                          />
+                      </div>
+                  </div> */}
+                  <div className="col-md-6">
+                      <div className="mb-3">
+                          <label className="form-label">
+                              Postal Code <span className="text-danger">*</span>
+                          </label>
+                          <input type="text" className="form-control" />
+                      </div>
+                  </div>
               </div>
               <div className="col-lg-6 col-sm-12">
                 <div className="mb-3">

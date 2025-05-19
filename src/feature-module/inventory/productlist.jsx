@@ -5,7 +5,7 @@ import {
   RotateCcw,
   Trash2,
 } from "feather-icons-react/build/IconComponents";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import ImageWithBasePath from "../../core/img/imagewithbasebath";
@@ -16,31 +16,49 @@ import Table from "../../core/pagination/datatable";
 import { setToogleHeader } from "../../core/redux/action";
 import { Download } from "react-feather";
 import { fetchProducts } from "../../core/redux/slice/productsSlice";
+import { useDeleteProductMutation, useGetProductListQuery } from "../../core/redux/api/productApi";
 
-const ProductList = () => {
+const ProductList = () => { 
   // const dataSource = useSelector((state) => state.rootReducer.product_list);
-  const { list: dataSource, status, error } = useSelector(state => state.productReducer);  const dispatch = useDispatch();
-  // const dataSource = datares.list.data;
-  console.log("dataSource1", dataSource);
-
+  const { data: dataSource, isLoading, error, refetch } = useGetProductListQuery(undefined,{refetchOnMountOrArgChange: true});
+  // const dispatch = useDispatch();
+  const [deleteProduct] = useDeleteProductMutation();
+  const [productToDelete, setProductToDelete] = useState(null);
   const data = useSelector((state) => state.rootReducer.toggle_header);
-  useEffect(() => {
-    dispatch(fetchProducts());
-  }, [dispatch]);
-
+ 
+useEffect(() => {
+    refetch(); 
+  }, [refetch]);
   const route = all_routes;
 
-  
-  if (status === 'loading') return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  const handleDeleteProduct = async () => { 
+    if (!productToDelete) return;
+    
+    try {
+      // Properly unwrap the promise and await the result
+      await deleteProduct(productToDelete._id).unwrap();
+      
+      // Success - refetch the products
+      await refetch();
+      
+      alert("Product deleted successfully");
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      alert("Failed to delete product");
+    }
+    
+    setProductToDelete(null);
+  };
+  if (isLoading) return <div className="text-center py-4">Loading products...</div>;
+  if (error) return <div className="alert alert-danger">Error: {error.message}</div>;
   const columns = [
     {
-      title: "SKU",
-      dataIndex: "sku",
+      title: "Product Id",
+      dataIndex: "productId",
       sorter: (a, b) => a.sku.length - b.sku.length,
     },
     {
-      title: "Product",
+      title: "Image",
       dataIndex: "name",
       render: (text, record) => (
         <div className="d-flex align-items-center">
@@ -73,7 +91,7 @@ const ProductList = () => {
       sorter: (a, b) => a.name.length - b.name.length,
     },
     {
-      title: "Product Name",
+      title: "Item Name",
       dataIndex: "productName",
       sorter: (a, b) => a.brand.length - b.brand.length,
     },
@@ -81,12 +99,14 @@ const ProductList = () => {
       title: "Category",
       dataIndex: "category",
       render: (category) => category?.name || '',
+    
       sorter: (a, b) => a.category.length - b.category.length,
     },
 
     {
       title: "Brand",
       dataIndex: "brand",
+      render: (brand) => brand?.brandName || 'N/A', 
       sorter: (a, b) => a.brand.length - b.brand.length,
     },
     {
@@ -97,6 +117,7 @@ const ProductList = () => {
     {
       title: "Unit",
       dataIndex: "unit",
+      render: (unit) => unit?.unitName || '1', 
       sorter: (a, b) => a.unit.length - b.unit.length,
     },
     {
@@ -133,6 +154,7 @@ const ProductList = () => {
               to="#" 
               data-bs-toggle="modal" 
               data-bs-target="#delete-modal"
+              onClick={()=>setProductToDelete(record?._id)}
             >
               <Trash2 className="feather-trash-2" />
             </Link>
@@ -503,6 +525,7 @@ const ProductList = () => {
                     <button
                       type="button"
                       className="btn btn-primary fs-13 fw-medium p-2 px-3" data-bs-dismiss="modal"
+                      onClick={handleDeleteProduct}
                     >
                       Yes Delete
                     </button>

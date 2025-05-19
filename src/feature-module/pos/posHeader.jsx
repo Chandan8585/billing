@@ -87,7 +87,7 @@ const PosHeader = () => {
                 {/* Logo */}
                 <div className="header-left active">
                     <Link to={all_routes.newdashboard} className="logo logo-normal">
-                        <ImageWithBasePath src="assets/img/logo-small.png" alt="Img" />
+                        <ImageWithBasePath src="assets/img/logo-small.png" alt="Img" width={50} height={50}/>
                     </Link>
                     <Link to={all_routes.newdashboard} className="logo logo-white">
                         <ImageWithBasePath src="assets/img/logo-white.png" alt="Img" />

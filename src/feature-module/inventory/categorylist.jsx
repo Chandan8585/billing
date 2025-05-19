@@ -8,34 +8,35 @@ import RefreshIcon from "../../core/common/tooltip-content/refresh";
 import CollapesIcon from "../../core/common/tooltip-content/collapes";
 import CommonFooter from "../../core/common/footer/commonFooter";
 import CommonDeleteModal from "../../core/common/modal/commonDeleteModal";
+import { useGetCategoryListQuery } from "../../core/redux/api/productApi";
 
 const CategoryList = () => {
 
-  const dataSource = useSelector((state) => state.rootReducer.categotylist_data);
-
+  // const dataSource = useSelector((state) => state.rootReducer.categotylist_data);
+  const { data: dataSource, isLoading: categoryLoading, error: categoryError } = useGetCategoryListQuery(undefined,{refetchOnMountOrArgChange: true}); 
 
   const columns = [
     {
-      title: "Category",
-      dataIndex: "category",
+      title: "Category Code",
+      dataIndex: "categoryCode",
       sorter: (a, b) => a.category.length - b.category.length,
     },
     {
-      title: "Category Slug",
-      dataIndex: "categoryslug",
-      sorter: (a, b) => a.categoryslug.length - b.categoryslug.length,
+      title: "Category Name",
+      dataIndex: "name",
+      sorter: (a, b) => a.name.length - b.name.length,
     },
     {
       title: "Created On",
-      dataIndex: "createdon",
-      sorter: (a, b) => a.createdon.length - b.createdon.length,
+      dataIndex: "createdAt",
+      sorter: (a, b) => a.createdAt.length - b.createdAt.length,
     },
     {
-      title: "Status",
-      dataIndex: "status",
+      title: "Created By",
+      dataIndex: "Admin",
       render: (text) => (
         <span className="badge bg-success fw-medium fs-10">
-          {text}
+          {text || 'Admin'}
         </span>
       ),
       sorter: (a, b) => a.status.length - b.status.length,

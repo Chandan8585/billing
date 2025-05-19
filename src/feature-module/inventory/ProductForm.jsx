@@ -6,6 +6,7 @@ import { DatePicker } from "antd";
 import Addunits from "../../core/modals/inventory/addunits";
 import AddCategory from "../../core/modals/inventory/addcategory";
 import AddBrand from "../../core/modals/addbrand";
+import dayjs from 'dayjs';
 import {
   ArrowLeft,
   Calendar,
@@ -25,60 +26,74 @@ import AddVariant from "../../core/modals/inventory/addvariant";
 import AddVarientNew from "../../core/modals/inventory/addVarientNew";
 import CommonTagsInput from "../../core/common/Taginput";
 import TextEditor from "./texteditor";
-import { useGetNewSkuIdQuery, useGetStoreListQuery, useCreateProductMutation,
-  useUpdateProductMutation, useGetProductDetailByIdQuery } from "../../core/redux/api/productApi";
+import { useGetNewProductIdQuery, useGetStoreListQuery, useCreateProductMutation,
+  useUpdateProductMutation, useGetProductDetailByIdQuery, 
+  useGetBrandListQuery,
+  useGetUnitListQuery} from "../../core/redux/api/productApi";
 import { useGetCategoryListQuery } from "../../core/redux/api/categoryApi";
 import { useParams, useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 const initialFormState = {
-saleRate: '',
-sku: '',
-store: '',
-warehouse: '',
-productName: '',
-hsnCode: '',
-counter: '',
-category: '',
-subCategory: '',
-brand: '',
-unit: '',
-description: '',
-quantity: '',
-gstType: '',
-gstRate: '',
-discountType: '',
-discountValue: '',
-quantityAlert: '',
-fastMoving: false,
-warranty: '',
-manufacturer: '',
-manufacturedDate: '',
-expiryDate: '',
-}
-const ProductForm = ({isEditMode}) => { 
+  saleRate: 0,
+  productId: '',
+  sku: '',
+  store: '',
+  warehouse: '',
+  productName: '',
+  hsnCode: '',
+  counter: '',
+  category: '',
+  subCategory: '',
+  brand: '',
+  unit: '',
+  thumbnail: null,       // image preview or URL string
+  Image: null,           // actual File object
+  description: '',
+  quantity: 0,
+  gstType: false,        // true or false, not string
+  gstRate: 0,
+  discountType: '',
+  discountValue: 0,
+  quantityAlert: 0,
+  fastMoving: false,
+  warranty: '',
+  manufacturer: '',
+  manufacturedDate: null, // use Date or null
+  expiryDate: null,       // use Date or null
+};
+
+const ProductForm = ({isEditMode}) => {
   const [errors , setErrors] = useState([]);
   ProductForm.propTypes = {
     isEditMode: PropTypes.bool.isRequired,
   };
+  
+  const [imageFile, setImageFile] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [subCategoryOptions, setsubCategoryOptions] = useState([]);
   const { data: stores, isLoading, error } = useGetStoreListQuery();
+  const {data: brand, isBrandLoading, brandError } = useGetBrandListQuery();
+  const {data: unit, isUnitLoading, unitError} = useGetUnitListQuery();
   const { data: category, isLoading: categoryLoading, error: categoryError } = useGetCategoryListQuery(); 
-  const {
-    data: skuId, 
-    isLoading: isSkuLoading, 
-  } = useGetNewSkuIdQuery();
+
+    console.log("brand", brand, unit, category);
   const [inputValue, setInputValue] = useState('');
-  const {productId} = useParams();
+  const {productObjectId} = useParams();
   const navigate = useNavigate(); 
   const [formData, setFormData] = useState(initialFormState);
   const [createProduct, {isLoading: isCreating}] = useCreateProductMutation();
   const [updateProduct, {isLoading: isUpdating}] = useUpdateProductMutation();
-
-  const {data: existingProduct, isLoading: isProductLoading} = useGetProductDetailByIdQuery(productId 
+  const [selectedImage, setSelectedImage] = useState(formData.thumbnail || null);
+  const {data: existingProduct, isLoading: isProductLoading} = useGetProductDetailByIdQuery(productObjectId 
     ,{skip: !isEditMode}
   );
-  
+
+    const {
+  data: ProductIdData, // Renamed for clarity
+  isLoading: isProductIDLoading,
+  refetch: refetchProductId // Add refetch function
+} = useGetNewProductIdQuery();
+ console.log("productID",ProductIdData);
   useEffect(()=>{
     if(isEditMode && existingProduct){
       setFormData({
@@ -87,9 +102,15 @@ const ProductForm = ({isEditMode}) => {
       })
     }
   }, [isEditMode, existingProduct]);
-  const handleInputChange = (e)=>{
-    const {name, value} = e.target;
-    setFormData(prev=> ({...prev, [name]: value}));
+  const handleInputChange = (e) => {
+  const {name, value, type} = e.target;
+  
+  // Convert to number if input type is number
+  const processedValue = type === 'number' ? 
+    parseFloat(value) || 0 : // Handle NaN cases
+    value;
+  
+  setFormData(prev => ({...prev, [name]: processedValue}));
   }
   const handleSelectChange= (name, selectedOption) => {
     if (name === 'category') {
@@ -97,72 +118,94 @@ const ProductForm = ({isEditMode}) => {
     }
     setFormData(prev => ({...prev, [name]: selectedOption?.value || ''}));
   }
- 
+const handleCategoryAdded = (newCategory) => {
+  // Update categories in main form
+  setFormData(prev => ({
+    ...prev,
+    category: newCategory._id
+  }));
+};
+const handleUnitAdded = (newUnit) => {
+     setFormData(prev => ({
+    ...prev,
+    unit: newUnit._id
+  }));
+}
   const handleSubmit = async (e) => {
-    e.preventDefault();
-  
-    // Convert data to proper formats for backend
-    const requestData = {
-      ...formData,
-      // Convert dates to ISO strings
-      manufacturedDate: formData.manufacturedDate?.toISOString(),
-      expiryDate: formData.expiryDate?.toISOString(),
-      // Convert string booleans to actual booleans
-      gstType: formData.gstType === "true",
-      fastMoving: Boolean(formData.fastMoving),
-      // Ensure numbers are properly formatted
-      saleRate: parseFloat(formData.saleRate),
-      quantity: parseInt(formData.quantity),
-      gstRate: parseFloat(formData.gstRate),
-      // Map frontend field names to backend names if different
-      expiry: formData.expiryDate?.toISOString(), // If backend expects 'expiry' instead of 'expiryDate'
-      // Include any other required transformations
+      e.preventDefault();
+    
+      // Convert data to proper formats for backend
+      const requestData = {
+        ...formData,
+        // Convert dates to ISO strings
+      manufacturedDate : formData.manufacturedDate?.toISOString
+        ? formData.manufacturedDate.toISOString()
+        : null,
+
+      expiry : formData.expiryDate?.toISOString
+        ? formData.expiryDate.toISOString()
+        : null,
+
+        gstType: formData.gstType === "true",
+        fastMoving: Boolean(formData.fastMoving),
+        saleRate: parseFloat(formData.saleRate),
+        quantity: parseInt(formData.quantity),
+        gstRate: parseFloat(formData.gstRate),
+      if (selectedImage) {
+      formDataToSend.append('Image', selectedImage); 
+      }
+      
+      };
+      Object.keys(requestData).forEach(key => {
+        if (requestData[key] === undefined || requestData[key] === null) {
+          delete requestData[key];
+        }
+      });
+    
+      try {
+        if (isEditMode) {
+          await updateProduct(requestData).unwrap();
+          navigate('/products');
+        } else {
+          await createProduct(requestData).unwrap();
+          setFormData(initialFormState);
+          alert("Product created successfully!");
+        }
+      } catch (error) {
+        console.error('API Error:', error);
+        if (error.data?.errors) {
+          // Transform backend errors to match form field names
+          const transformedErrors = error.data.errors.reduce((acc, err) => {
+            // Map backend field names to frontend names if needed
+            const fieldName = err.path === 'expiry' ? 'expiryDate' : err.path;
+            return {...acc, [fieldName]: err.msg};
+          }, {});
+          setErrors(transformedErrors);
+        } else {
+          alert(error.data?.message || 'Failed to submit product');
+        }
+      }
     };
-  
-    // Remove any undefined or null values
-    Object.keys(requestData).forEach(key => {
-      if (requestData[key] === undefined || requestData[key] === null) {
-        delete requestData[key];
-      }
-    });
-  
-    try {
-      if (isEditMode) {
-        await updateProduct(requestData).unwrap();
-        navigate('/products');
-      } else {
-        await createProduct(requestData).unwrap();
-        setFormData(initialFormState);
-        alert("Product created successfully!");
-      }
-    } catch (error) {
-      console.error('API Error:', error);
-      if (error.data?.errors) {
-        // Transform backend errors to match form field names
-        const transformedErrors = error.data.errors.reduce((acc, err) => {
-          // Map backend field names to frontend names if needed
-          const fieldName = err.path === 'expiry' ? 'expiryDate' : err.path;
-          return {...acc, [fieldName]: err.msg};
-        }, {});
-        setErrors(transformedErrors);
-      } else {
-        alert(error.data?.message || 'Failed to submit product');
-      }
-    }
-  };
   console.log( "formData",formData);
-  const handleGenerateSku = async () => {
-    console.log("skuid",skuId);
-    try {
-      if (isSkuLoading) return; // Prevent duplicate clicks
-      if (skuId) {
-        setFormData(prev => ({ ...prev, sku: skuId }));
-      }
-    } catch (error) {
-      // toast.error("Failed to generate SKU");
-      console.log(error);
+
+const handleGenerateProductID = async () => {
+  try {
+    if (isProductIDLoading || formData.productId) return;
+    
+    const  {data}  = await refetchProductId();
+    console.log("Generated ID response:", data.productId); // Debug log
+     
+    if (data?.productId || data?.code) {
+      setFormData(prev => ({
+        ...prev,
+        productId: data.productId || data.code
+      }));
     }
-  };
+  } catch (error) {
+    console.error("Generation Error:", error);
+    // Add user feedback here (toast/alert)
+  }
+};
   const route = all_routes;
   const [tags, setTags] = useState(["Red", "Black"]);
   const [product, setProduct] = useState(false);
@@ -182,7 +225,15 @@ const ProductForm = ({isEditMode}) => {
     label: cat?.name,
     subCategories: cat?.subCategory
   })) || [];
-
+  const brandOptions = brand?.data?.map(item => ({
+    value: item?._id,
+    label: item?.brandName
+  }))
+  console.log("formDatabrand",brandOptions);
+  const unitOptions = unit?.map(item => ({
+     value: item?._id,
+    label: item?.unitName
+  }))
   const handleCategoryChange = (selectedOption) => {
     const newCategoryValue = selectedOption?.value || null;
     setSelectedCategory(newCategoryValue);
@@ -214,16 +265,16 @@ const handleCheckboxChange = (e) => {
     [name]: checked
   }));
 };
-  const brand = [
-    { value: "choose", label: "Choose" },
-    { value: "nike", label: "Nike" },
-    { value: "bolt", label: "Bolt" },
-  ];
-  const unit = [
-    { value: "choose", label: "Choose" },
-    { value: "kg", label: "Kg" },
-    { value: "pc", label: "Pc" },
-  ];
+  // const brand = [
+  //   { value: "choose", label: "Choose" },
+  //   { value: "nike", label: "Nike" },
+  //   { value: "bolt", label: "Bolt" },
+  // ];
+  // const unit = [
+  //   { value: "choose", label: "Choose" },
+  //   { value: "kg", label: "Kg" },
+  //   { value: "pc", label: "Pc" },
+  // ];
   const counterNumber = [
     { value: "choose", label: "Choose" },
     { value: "Counter 1", label: "Counter 1" },
@@ -271,6 +322,25 @@ const handleCheckboxChange = (e) => {
   const handleRemoveProduct1 = () => {
     setIsImageVisible1(false);
   };
+const handleImageChange = (e) => {
+  const file = e.target.files[0];
+  if (file && (file.type === "image/jpeg" || file.type === "image/png")) {
+    if (file.size <= 2 * 1024 * 1024) {
+      const imageUrl = URL.createObjectURL(file);
+      setSelectedImage(imageUrl);
+      setImageFile(file); // Store the actual file
+      
+    } else {
+      alert("File must be less than 2MB.");
+    }
+  } else {
+    alert("Only JPG and PNG files are allowed.");
+  }
+};
+  
+  console.log("formdata", formData.photoUrl);
+
+
   if (isEditMode && isProductLoading) return <div>Loading product data...</div>;
   return (
     <>
@@ -300,7 +370,6 @@ const handleCheckboxChange = (e) => {
           {/* /add */}
           <form className="add-product-form" onSubmit={handleSubmit}>
             <div className="add-product">
-              
                 <div className="accordions-items-seperate" id="accordionSpacingExample">
                   <div className="accordion-item border mb-4">
                     <h2 className="accordion-header" id="headingSpacingOne">
@@ -376,7 +445,7 @@ const handleCheckboxChange = (e) => {
                               <label className="form-label">
                                 HSN Code<span className="text-danger ms-1"></span>
                               </label>
-                              <input type="text" className="form-control"  name="hsnCode"  onChange={ handleInputChange} value={formData.hsnCode}/>
+                              <input type="number" className="form-control"  name="hsnCode"  onChange={ handleInputChange} value={formData.hsnCode}/>
                             </div>
                           </div>
                         </div>
@@ -384,24 +453,31 @@ const handleCheckboxChange = (e) => {
                           <div className="col-sm-6 col-12">
                             <div className="mb-3 list position-relative">
                               <label className="form-label">
-                                SKU<span className="text-danger ms-1">*</span>
+                                ProductId<span className="text-danger ms-1">*</span>
                               </label>
-                              <input 
-                                  type="text" 
-                                  className="form-control list" 
-                                  value={formData.sku} // Bind to formData.sku instead of formData.quantity
-                                  onChange={(e) => handleInputChange(e)} // Pass the event properly
-                                  required
-                                  readOnly={!!skuId?.data} // Make it read-only if SKU is generated
-                                  name="sku"
-                                />
-                            <button 
+                            <input 
+                                type="text" 
+                                className="form-control list" 
+                                value={formData.productId || ''}
+                                onChange={(e) => handleInputChange(e)}
+                                required
+                                readOnly
+                                name="productId"
+                              />
+                          <button 
                               type="button" 
                               className="btn btn-primaryadd"  
-                              onClick={handleGenerateSku} 
-                              disabled={isSkuLoading || !!formData.sku} // Disable if already generated
+                              onClick={handleGenerateProductID}
+                              disabled={isProductIDLoading || !!formData.productId}
                             >
-                              {isSkuLoading ? 'Generating...' : 'Generate'}
+                              {isProductIDLoading ? (
+                                <>
+                                  <span className="spinner-border spinner-border-sm me-1"></span>
+                                  Generating...
+                                </>
+                              ) : (
+                                'Generate'
+                              )}
                             </button>
                            
                             </div>
@@ -409,21 +485,10 @@ const handleCheckboxChange = (e) => {
                           <div className="col-sm-6 col-12">
                             <div className="mb-3">
                               <label className="form-label">
-                                Counter Number<span className="text-danger ms-1">*</span>
+                                SKU<span className="text-danger ms-1"></span>
                               </label>
-                              {
-                                
-                              }
-                              <Select
-                                classNamePrefix="react-select"
-                                name="counter"
-                                options={counterNumber}
-                                placeholder="Choose"
-                                value={counterNumber.find(opt=> opt.value === formData.counter)}
-                                onChange={(option)=> handleSelectChange('counter', option)}
-                                isDisabled={isEditMode}
-                                isClearable
-                              />
+                                <input type="text" className="form-control"  name="sku"  onChange={ handleInputChange} value={formData.sku}/>
+                              
                             </div>
                           </div>
                         </div>
@@ -489,16 +554,27 @@ const handleCheckboxChange = (e) => {
                                   <label className="form-label">
                                     Brand<span className="text-danger ms-1">*</span>
                                   </label>
+                                   <Link
+                                    to="#"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#add-units-brand"
+                                  >
+                                    <PlusCircle
+                                      data-feather="plus-circle"
+                                      className="plus-down-add"
+                                    />
+                                    <span>Add New</span>
+                                  </Link>
                                 </div>
                                 <Select
                                     classNamePrefix="react-select"
-                                    options={brand}
+                                    options={brandOptions}
                                     placeholder="Choose"
-                                    value={brand.find(opt => opt.value === formData.brand)}
+                                    value={formData.brand ? brandOptions.find(option => option.value === formData.brand) : null}
                                     onChange={(option) => handleSelectChange('brand', option)}
                                     isDisabled={isEditMode}
                                     isClearable
-                                    name="subCategory"
+                                    name="brand"
                                   />
                               </div>
                             </div>
@@ -508,13 +584,24 @@ const handleCheckboxChange = (e) => {
                                   <label className="form-label">
                                     Unit<span className="text-danger ms-1">*</span>
                                   </label>
+                                   <Link
+                                    to="#"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#add-unit"
+                                  >
+                                    <PlusCircle
+                                      data-feather="plus-circle"
+                                      className="plus-down-add"
+                                    />
+                                    <span>Add New</span>
+                                  </Link>
                                 </div>
                                 <Select
                                   classNamePrefix="react-select"
-                                  options={unit}
+                                  options={unitOptions}
                                   placeholder="Choose"                              
                                   name="unit"
-                                  value={unit.find(opt=> opt.value === formData.unit)}
+                                  value={unitOptions?.find(opt=> opt?.value === formData?.unit)}
                                   onChange={(option)=> handleSelectChange('unit', option)}
                                   isDisabled={isEditMode}
                                   isClearable
@@ -611,7 +698,7 @@ const handleCheckboxChange = (e) => {
                                   <span className="checkmark" /> Single Product
                                 </span>
                               </li>
-                              <li className="nav-item" role="presentation">
+                              {/* <li className="nav-item" role="presentation">
                                 <span
                                   className="custom_radio me-2 mb-0"
                                   id="pills-profile-tab"
@@ -628,7 +715,7 @@ const handleCheckboxChange = (e) => {
                                   />
                                   <span className="checkmark" /> Variable Product
                                 </span>
-                              </li>
+                              </li> */}
                             </ul>
                           </div>
                         </div>
@@ -648,7 +735,7 @@ const handleCheckboxChange = (e) => {
                                       Quantity<span className="text-danger ms-1">*</span>
                                     </label>
                                 
-                                    <input type="text" className="form-control"  onChange={ handleInputChange} value={formData.quantity} name="quantity"/>
+                                    <input type="number" className="form-control"  onChange={ handleInputChange} value={formData.quantity} name="quantity"/>
                                   </div>
                                 </div>
                                 <div className="col-lg-4 col-sm-6 col-12">
@@ -656,7 +743,7 @@ const handleCheckboxChange = (e) => {
                                     <label className="form-label">
                                       Sale Rate<span className="text-danger ms-1">*</span>
                                     </label>
-                                    <input type="text" className="form-control" placeholder="enter selling rate of the product" onChange={ handleInputChange} value={formData.saleRate}   name="saleRate"/>
+                                    <input type="number" className="form-control" placeholder="enter selling rate of the product" onChange={ handleInputChange} value={formData.saleRate}   name="saleRate"/>
                                     
                                   </div>
                                 </div>
@@ -670,7 +757,7 @@ const handleCheckboxChange = (e) => {
                                       options={gstRate}
                                       placeholder="Select Option"
                                       name="gstRate"
-                                      value={unit.find(opt=> opt.value === formData.gstRate)}
+                                      value={gstRate.find(opt=> opt.value === formData.gstRate || null)}
                                       onChange={(option)=> handleSelectChange('gstRate', option)}
                                       isDisabled={isEditMode}
                                       isClearable
@@ -687,7 +774,7 @@ const handleCheckboxChange = (e) => {
                                       options={gstType}
                                       placeholder="Select Option"
                                       name="gstType"
-                                      value={unit.find(opt=> opt.value === formData.gstType)}
+                                      value={gstType.find(opt=> opt.value === formData.gstType) || null}
                                       onChange={(option)=> handleSelectChange('gstType', option)}
                                       isDisabled={isEditMode}
                                       isClearable
@@ -706,7 +793,7 @@ const handleCheckboxChange = (e) => {
                                       options={discounttype}
                                       placeholder="Choose"
                                       name="discounttype"
-                                      value={discounttype.find(opt=> opt.value === formData.discountType)}
+                                      value={discounttype.find(opt=> opt.value === formData.discountType) || null}
                                       onChange={(option)=> handleSelectChange('discountType', option)}
                                       isDisabled={isEditMode}
                                       isClearable
@@ -719,7 +806,7 @@ const handleCheckboxChange = (e) => {
                                       Discount Value
                                       <span className="text-danger ms-1">*</span>
                                     </label>
-                                    <input type="text" className="form-control" placeholder="enter the discount value" name="discountValue" onChange={ handleInputChange} value={formData.discountValue}/>
+                                    <input type="number" className="form-control" placeholder="enter the discount value" name="discountValue" onChange={ handleInputChange} value={formData.discountValue}/>
 
                                   </div>
                                 </div>
@@ -729,7 +816,7 @@ const handleCheckboxChange = (e) => {
                                       Quantity Alert
                                       <span className="text-danger ms-1">*</span>
                                     </label>
-                                    <input type="text" className="form-control" placeholder="enter the quantity after which you want alert" onChange={ handleInputChange} name="quantityAlert" value={formData.quantityAlert}/>
+                                    <input type="number" className="form-control" placeholder="enter the quantity after which you want alert" onChange={ handleInputChange} name="quantityAlert" value={formData.quantityAlert}/>
 
                                   </div>
                                 </div>
@@ -821,7 +908,7 @@ const handleCheckboxChange = (e) => {
                                       <tr>
                                         <th>Variantion</th>
                                         <th>Variant Value</th>
-                                        <th>SKU</th>
+                                        <th>Product Id</th>
                                         <th>Quantity</th>
                                         <th>Price</th>
                                         <th className="no-sort" />
@@ -1010,49 +1097,63 @@ const handleCheckboxChange = (e) => {
                       <div className="accordion-body border-top">
                         <div className="text-editor add-list add">
                           <div className="col-lg-12">
-                            <div className="add-choosen">
-                              <div className="mb-3">
-                                <div className="image-upload">
-                                  <input type="file" />
-                                  <div className="image-uploads">
-                                    <PlusCircle
-                                      data-feather="plus-circle"
-                                      className="plus-down-add me-0"
-                                    />
-                                    <h4>Add Images</h4>
-                                  </div>
-                                </div>
-                              </div>
-                              {
-                                isImageVisible1 && (
-                                <div className="phone-img">
-                                  <ImageWithBasePath
-                                    src="assets/img/products/phone-add-2.png"
-                                    alt="image"
-                                  />
-                                  <Link to="#">
-                                    <X
-                                      className="x-square-add remove-product"
-                                      onClick={handleRemoveProduct1}
-                                    />
-                                  </Link>
-                                </div>
-                              )}
-                              {isImageVisible && (
-                                <div className="phone-img">
-                                  <ImageWithBasePath
-                                    src="assets/img/products/phone-add-1.png"
-                                    alt="image"
-                                  />
-                                  <Link to="#">
-                                    <X
-                                      className="x-square-add remove-product"
-                                      onClick={handleRemoveProduct}
-                                    />
-                                  </Link>
-                                </div>
-                              )}
-                            </div>
+                          <div className="add-choosen">
+  <div className="mb-3">
+    <div className="image-upload">
+      <input type="file" accept="image/png, image/jpeg" onChange={handleImageChange}/>
+      <div className="image-uploads">
+        <PlusCircle className="plus-down-add me-0" />
+        <h4>Add Images</h4>
+      </div>
+    </div>
+  </div>
+  
+  {selectedImage ? (
+    <div className="phone-img">
+      <img
+        src={selectedImage}
+        alt="Product"
+        className="object-fit-cover h-100 rounded-1"
+      />
+      <Link to="#">
+        <X
+          className="x-square-add remove-product"
+          onClick={() => {
+            setSelectedImage(null);
+            setImageFile(null);
+          }}
+        />
+      </Link>
+    </div>
+  ) : (
+    <>
+      <div className="phone-img">
+        <ImageWithBasePath
+          src="assets/img/products/phone-add-1.png"
+          alt="placeholder"
+        />
+        <Link to="#">
+          <X
+            className="x-square-add remove-product"
+            onClick={handleRemoveProduct}
+          />
+        </Link>
+      </div>
+      <div className="phone-img">
+        <ImageWithBasePath
+          src="assets/img/products/phone-add-2.png"
+          alt="placeholder"
+        />
+        <Link to="#">
+          <X
+            className="x-square-add remove-product"
+            onClick={handleRemoveProduct1}
+          />
+        </Link>
+      </div>
+    </>
+  )}
+</div>
                           </div>
                         </div>
                       </div>
@@ -1144,7 +1245,7 @@ const handleCheckboxChange = (e) => {
                                   Manufacturer<span className="text-danger ms-1">*</span>
                                 </label>
                                 
-                                <input type="text" className="form-control"  onChange={ handleInputChange} value={formData.quantity} name="manufacturer"/>
+                                <input type="text" className="form-control"  onChange={ handleInputChange} value={formData.manufacturer} name="manufacturer"/>
                               </div>
                             </div>
                           </div>
@@ -1212,22 +1313,18 @@ const handleCheckboxChange = (e) => {
         </div>
         <div className="footer d-sm-flex align-items-center justify-content-between border-top bg-white p-3">
           <p className="mb-0 text-gray-9">
-            2014 - 2025 © DreamsPOS. All Right Reserved
+            2014 - 2025 © AERO PACK RETAIL AUTOMATION SOLUTIONS. All Right Reserved
           </p>
           <p>
             Designed &amp; Developed by{" "}
             <Link to="#" className="text-primary">
-              Dreams
+              Aero Pack Pos
             </Link>
           </p>
         </div>
 
       </div>
-      <Addunits />
-      <AddCategory />
-      <AddVariant />
-      <AddBrand />
-      <AddVarientNew />
+     
       <div className="modal fade" id="delete-modal">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
@@ -1239,12 +1336,17 @@ const handleCheckboxChange = (e) => {
                 <div className="modal-footer-btn mt-3 d-flex justify-content-center">
                   <button type="button" className="btn me-2 btn-secondary fs-13 fw-medium p-2 px-3 shadow-none" data-bs-dismiss="modal">Cancel</button>
                   <button type="button" className="btn btn-primary fs-13 fw-medium p-2 px-3">Yes Delete</button>
-                </div>
+                  </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+       <Addunits onSubmit={handleUnitAdded}/>
+      <AddCategory onSubmit={handleCategoryAdded} />
+      <AddVariant />
+      <AddBrand />
+      <AddVarientNew />
     </>
   );
 };

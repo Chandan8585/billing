@@ -23,8 +23,12 @@ import Pos2Counter from "./pos2Counter";
 import Item from "antd/es/list/Item";
 import { useDebounce } from "use-debounce";
 import { Empty } from "antd";
+import { useSelector } from "react-redux";
+import PrintReceiptModal from "./PrintReceiptModal";
 
 const Pos2 = () => {
+  const { user } = useSelector((state) => state.user);
+  console.log("userstatedata", user);
   const {data: categoryList, isLoading: categoryLoading} = useGetCategoryListQuery([]);
   const [allProducts, setAllProducts] = useState([]);
 const { data: initialProducts } = useGetProductListQuery();
@@ -71,7 +75,7 @@ const queryParams = useMemo(() => ({
 
 const { data: filteredProducts, isLoading: productsLoading } = useFilterProductQuery(queryParams);
 const {data: amount} = useGetCartTotalsQuery();
-
+console.log("amount", amount);
 const productsToDisplay = useMemo(() => {
   if (filters.category === 'all' && !debouncedSearch) {
     return initialProducts?.data || [];
@@ -266,7 +270,7 @@ const handleEmptyCart = async()=> {
                         className="form-control"
                         placeholder="Search Product"
                         onChange={(e)=> setSearchInput(e.target.value)}
-                        value={debouncedSearch}
+                        value={searchInput}
                       />
                     </div>
                   </div>
@@ -318,7 +322,7 @@ const handleEmptyCart = async()=> {
                                   <Link to="#">{product?.productName || product?.name || "Unnamed Product"}</Link>
                                 </h6>
                                 <div className="d-flex align-items-center justify-content-between price">
-                                  <span>{product?.quantity || 0} {product?.unit || 'Pcs'}</span>
+                                  <span>{product?.quantity || 0} {product?.unit?.unitName || 'Pcs'}</span>
                                   <p>Rs {(product?.saleRate || product?.price || 0).toFixed(2)}</p>
                                 </div>
                               </div>
@@ -384,7 +388,7 @@ const handleEmptyCart = async()=> {
                         serverCart?.map((item)=> {
                       
                         return(
-                          <div className="product-list align-items-center justify-content-between" key={item?.product?._id}>
+                          <div className="product-list d-flex align-items-center justify-content-between" key={item?.product?._id}>
                           <div
                             className="d-flex align-items-center product-info"
                             data-bs-toggle="modal"
@@ -394,7 +398,7 @@ const handleEmptyCart = async()=> {
                               <ImageWithBasePath
                                 src={item?.product?.image?.[0]}
                                 alt={item?.product?.productName}
-                               
+                                width={20}
                               />
                             </Link>
                             <div className="info">
@@ -405,20 +409,20 @@ const handleEmptyCart = async()=> {
                               <p className="fw-bold text-teal">{item?.saleRate}</p>
                             </div>
                           </div>
+                          <div className="d-flex  align-items-center gap-3">
                           <div className="qty-item text-center">
-                            
-                            <Pos2Counter  productId={item.product._id} 
-  initialQuantity={item.quantity} />
+                            <Pos2Counter productId={item?.product?._id} initialQuantity={item?.quantity} />
                           </div>
-                          <div className="d-flex align-items-center action">
+                          <div className="action d-flex align-items-center justify-content-center">
                             <Link
                               className="btn-icon delete-icon"
                               to="#"
-                              onClick={()=> handleRemoveFromCart(item?.product?._id)}
+                              onClick={() => handleRemoveFromCart(item?.product?._id)}
                             >
                               <Trash2 className="feather-14" />
                             </Link>
                           </div>
+                        </div>
                         </div>
                         )
                        })
@@ -613,7 +617,8 @@ const handleEmptyCart = async()=> {
       </div>
     </div>
   </div>
-  {/* Print Receipt */}
+  {/* Print Receipt */} 
+  <PrintReceiptModal user={user} serverCart={serverCart} amount={amount}/>
     <div
       className="modal fade modal-default"
       id="print-receipt"
@@ -628,15 +633,15 @@ const handleEmptyCart = async()=> {
                   src="assets/img/logo.png"
                   width={100}
                   height={30}
-                  alt="Receipt Logo"
+                  alt="Company Logo"
                 />
               </Link>
             </div>
             <div className="text-center info text-center">
-              <h6>Dreamguys Technologies Pvt Ltd.,</h6>
-              <p className="mb-0">Phone Number: +1 5656665656</p>
+              <h6>{user?.company}</h6>
+              <p className="mb-0">Phone Number: +91 9876665656</p>
               <p className="mb-0">
-                Email: <Link to="mailto:example@gmail.com">example@gmail.com</Link>
+                Email: <Link to="mailto:example@gmail.com">company@gmail.com</Link>
               </p>
             </div>
             <div className="tax-invoice">
@@ -655,7 +660,7 @@ const handleEmptyCart = async()=> {
                     <span>Customer Id: </span>#LL93784
                   </div>
                   <div className="invoice-user-name">
-                    <span>Date: </span>01.07.2022
+                    <span>Date: </span> {new Date().toLocaleDateString()}
                   </div>
                 </div>
               </div>
@@ -674,19 +679,19 @@ const handleEmptyCart = async()=> {
                   serverCart?.length > 0 ? (
                     serverCart?.map((item , index)=> {
                       
-                      return(   <tr key={item?.productName}>
+                      return(   <tr key={item?._id}>
                         <td>{index+1}. {item?.productName}</td>
                         <td>{item?.saleRate}</td>
                         <td>{item?.quantity}</td>
                         <td className="text-end">{item?.saleRate * item?.quantity}</td>
                       </tr>)
                  
-                })) : ( <div className="empty-cart">
-                    <div className="fs-24 mb-1">
+                })) : ( <tr className="empty-cart">
+                    <td className="fs-24 mb-1">
                       <i className="ti ti-shopping-cart" />
-                    </div>
-                    <p className="fw-bold">No Products Selected</p>
-                  </div> )
+                    </td>
+                    <td className="fw-bold">No Products Selected</td>
+                  </tr> )
                 }
             <tr>
                           <td>Sub Total</td>
@@ -757,10 +762,10 @@ const handleEmptyCart = async()=> {
                   registration. Thank you for your business!
                 </p>
               </div>
-              <Link to="#">
+              {/* <Link to="#">
                 <ImageWithBasePath src="assets/img/barcode/barcode-03.jpg" alt="Barcode" />
-              </Link>
-              <p className="text-dark fw-bold">Sale 31</p>
+              </Link> */}
+              {/* <p className="text-dark fw-bold">Sale 31</p> */}
               <p>Thank You For Shopping With Us. Please Come Again</p>
               <Link to="#" className="btn btn-md btn-primary">
                 Print Receipt
