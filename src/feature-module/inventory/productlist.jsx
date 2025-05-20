@@ -15,33 +15,31 @@ import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import Table from "../../core/pagination/datatable";
 import { setToogleHeader } from "../../core/redux/action";
 import { Download } from "react-feather";
-import { fetchProducts } from "../../core/redux/slice/productsSlice";
 import { useDeleteProductMutation, useGetProductListQuery } from "../../core/redux/api/productApi";
 
 const ProductList = () => { 
-  // const dataSource = useSelector((state) => state.rootReducer.product_list);
-  const { data: dataSource, isLoading, error, refetch } = useGetProductListQuery(undefined,{refetchOnMountOrArgChange: true});
+  const { data: dataSource, isLoading, error, refetch } = useGetProductListQuery();
   // const dispatch = useDispatch();
   const [deleteProduct] = useDeleteProductMutation();
   const [productToDelete, setProductToDelete] = useState(null);
   const data = useSelector((state) => state.rootReducer.toggle_header);
  
-useEffect(() => {
-    refetch(); 
-  }, [refetch]);
+// useEffect(() => {
+//     refetch(); 
+//   }, []);
   const route = all_routes;
 
   const handleDeleteProduct = async () => { 
     if (!productToDelete) return;
     
     try {
-      // Properly unwrap the promise and await the result
-      await deleteProduct(productToDelete._id).unwrap();
+      console.log("productToDelete", productToDelete);
+      await deleteProduct(productToDelete).unwrap();
       
       // Success - refetch the products
-      await refetch();
+      // await refetch();
       
-      alert("Product deleted successfully");
+      // alert("Product deleted successfully");
     } catch (error) {
       console.error("Error deleting product:", error);
       alert("Failed to delete product");
@@ -49,8 +47,9 @@ useEffect(() => {
     
     setProductToDelete(null);
   };
-  if (isLoading) return <div className="text-center py-4">Loading products...</div>;
-  if (error) return <div className="alert alert-danger">Error: {error.message}</div>;
+ if (isLoading) return <div className="text-center py-4">Loading products...</div>;
+if (error) return <div className="alert alert-danger">Error: {error.message}</div>;
+if (!dataSource) return <div className="alert alert-warning">No products found</div>;
   const columns = [
     {
       title: "Product Id",
@@ -143,12 +142,12 @@ useEffect(() => {
             >
               <Eye className="feather-view" />
             </Link>
-            <Link 
+            {/* <Link 
               className="me-2 p-2" 
               to={route.editproduct.replace(':_id', record._id)}
             >
               <Edit className="feather-edit" />
-            </Link>
+            </Link> */}
             <Link
               className="confirm-text p-2"
               to="#" 

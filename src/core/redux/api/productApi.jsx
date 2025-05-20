@@ -9,7 +9,7 @@ export const productApi = createApi({
   endpoints: (builder) => ({
     getProductList: builder.query({
       query: ()=> `product/productList`,
-      providesTags: ['Product list']
+       providesTags: ['Product'],
     }),
     getProductDetailById: builder.query({
       query: (id) => `product/productList/${id}`,
@@ -93,15 +93,15 @@ export const productApi = createApi({
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Product', id }],
     }),
-    deleteProduct: builder.mutation({
+    deleteProduct: builder.mutation({ 
       query: (id) => ({
         url: `product/product/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result, error, id) => [{ type: 'Product', id }],
+         invalidatesTags: ['Product'],
     }),   
     filterProduct: builder.query({
-      query: (args) => {  // Take the whole args object
+      query: (args) => {  
       
         // Create URLSearchParams to prevent duplicates
         const params = new URLSearchParams();

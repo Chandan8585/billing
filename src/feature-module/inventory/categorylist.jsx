@@ -11,8 +11,7 @@ import CommonDeleteModal from "../../core/common/modal/commonDeleteModal";
 import { useGetCategoryListQuery } from "../../core/redux/api/productApi";
 
 const CategoryList = () => {
-
-  // const dataSource = useSelector((state) => state.rootReducer.categotylist_data);
+// const dataSource = useSelector((state) => state.rootReducer.categotylist_data);
   const { data: dataSource, isLoading: categoryLoading, error: categoryError } = useGetCategoryListQuery(undefined,{refetchOnMountOrArgChange: true}); 
 
   const columns = [

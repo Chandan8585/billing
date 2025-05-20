@@ -77,7 +77,6 @@ const ProductForm = ({isEditMode}) => {
   const { data: category, isLoading: categoryLoading, error: categoryError } = useGetCategoryListQuery(); 
 
     console.log("brand", brand, unit, category);
-  const [inputValue, setInputValue] = useState('');
   const {productObjectId} = useParams();
   const navigate = useNavigate(); 
   const [formData, setFormData] = useState(initialFormState);
@@ -87,21 +86,21 @@ const ProductForm = ({isEditMode}) => {
   const {data: existingProduct, isLoading: isProductLoading} = useGetProductDetailByIdQuery(productObjectId 
     ,{skip: !isEditMode}
   );
-
-    const {
-  data: ProductIdData, // Renamed for clarity
-  isLoading: isProductIDLoading,
-  refetch: refetchProductId // Add refetch function
-} = useGetNewProductIdQuery();
+ const { data: ProductIdData, isLoading: isProductIDLoading, refetch: refetchProductId} = useGetNewProductIdQuery();
  console.log("productID",ProductIdData);
-  useEffect(()=>{
-    if(isEditMode && existingProduct){
-      setFormData({
-        ...initialFormState,
-        ...existingProduct
-      })
+useEffect(() => {
+  if (isEditMode && existingProduct) {
+    setFormData({
+      ...initialFormState,
+      ...existingProduct
+    });
+
+    if (existingProduct.thumbnail && typeof existingProduct.thumbnail === 'string') {
+      setSelectedImage(existingProduct.thumbnail); // preview
     }
-  }, [isEditMode, existingProduct]);
+  }
+}, [isEditMode, existingProduct]);
+
   const handleInputChange = (e) => {
   const {name, value, type} = e.target;
   
@@ -137,46 +136,41 @@ const handleUnitAdded = (newUnit) => {
       // Convert data to proper formats for backend
       const requestData = {
         ...formData,
-        // Convert dates to ISO strings
-      manufacturedDate : formData.manufacturedDate?.toISOString
-        ? formData.manufacturedDate.toISOString()
-        : null,
-
-      expiry : formData.expiryDate?.toISOString
-        ? formData.expiryDate.toISOString()
-        : null,
-
-        gstType: formData.gstType === "true",
-        fastMoving: Boolean(formData.fastMoving),
-        saleRate: parseFloat(formData.saleRate),
-        quantity: parseInt(formData.quantity),
-        gstRate: parseFloat(formData.gstRate),
-      if (selectedImage) {
-      formDataToSend.append('Image', selectedImage); 
-      }
-      
+    manufacturedDate: formData.manufacturedDate?.toISOString?.() || null,
+    expiry: formData.expiryDate?.toISOString?.() || null,
+    gstType: formData.gstType === "true",
+    fastMoving: Boolean(formData.fastMoving),
+    saleRate: parseFloat(formData.saleRate),
+    quantity: parseInt(formData.quantity),
+    gstRate: parseFloat(formData.gstRate),    
       };
       Object.keys(requestData).forEach(key => {
         if (requestData[key] === undefined || requestData[key] === null) {
           delete requestData[key];
         }
       });
-    
+    const formDataToSend = new FormData();
+     for (const key in requestData) {
+    formDataToSend.append(key, requestData[key]);
+  }
+    if (selectedImage instanceof File) {
+  formDataToSend.append('Image', selectedImage);
+}
+
       try {
         if (isEditMode) {
-          await updateProduct(requestData).unwrap();
+          await updateProduct(formDataToSend).unwrap();
           navigate('/products');
         } else {
-          await createProduct(requestData).unwrap();
+          await createProduct(formDataToSend).unwrap();
           setFormData(initialFormState);
+          setSelectedImage(null);
           alert("Product created successfully!");
         }
       } catch (error) {
         console.error('API Error:', error);
         if (error.data?.errors) {
-          // Transform backend errors to match form field names
           const transformedErrors = error.data.errors.reduce((acc, err) => {
-            // Map backend field names to frontend names if needed
             const fieldName = err.path === 'expiry' ? 'expiryDate' : err.path;
             return {...acc, [fieldName]: err.msg};
           }, {});
@@ -249,7 +243,7 @@ const handleGenerateProductID = async () => {
     console.log('Subcategories from API:', selectedOption?.subCategories);
   
     const newSubcategories = (selectedOption?.subCategories || []).map(subcat => ({
-      value: subcat._id || subcat, // Handle both object and string subcategories
+      value: subcat._id || subcat, 
       label: subcat.name || subcat
     }));
   
@@ -328,8 +322,7 @@ const handleImageChange = (e) => {
     if (file.size <= 2 * 1024 * 1024) {
       const imageUrl = URL.createObjectURL(file);
       setSelectedImage(imageUrl);
-      setImageFile(file); // Store the actual file
-      
+      setImageFile(file); 
     } else {
       alert("File must be less than 2MB.");
     }
@@ -1100,7 +1093,10 @@ const handleImageChange = (e) => {
                           <div className="add-choosen">
   <div className="mb-3">
     <div className="image-upload">
-      <input type="file" accept="image/png, image/jpeg" onChange={handleImageChange}/>
+      <input type="file" accept="image/png, image/jpeg" onChange={(e) => {
+    const file = e.target.files[0];
+    setSelectedImage(file);
+  }}/>
       <div className="image-uploads">
         <PlusCircle className="plus-down-add me-0" />
         <h4>Add Images</h4>
@@ -1108,51 +1104,37 @@ const handleImageChange = (e) => {
     </div>
   </div>
   
-  {selectedImage ? (
-    <div className="phone-img">
-      <img
-        src={selectedImage}
-        alt="Product"
-        className="object-fit-cover h-100 rounded-1"
+
+{selectedImage && typeof selectedImage === 'object' && (
+  <div className="phone-img">
+     <img
+    src={URL.createObjectURL(selectedImage)}
+    alt="Preview"
+    className="object-fit-cover h-100 rounded-1"
+    width="100"
+    height="50"
+  />
+  <Link to="#">
+      <X
+        className="x-square-add remove-product"
+        onClick={() => {
+          setSelectedImage(null);
+          setImageFile(null);
+        }}
       />
-      <Link to="#">
-        <X
-          className="x-square-add remove-product"
-          onClick={() => {
-            setSelectedImage(null);
-            setImageFile(null);
-          }}
-        />
-      </Link>
-    </div>
-  ) : (
-    <>
-      <div className="phone-img">
-        <ImageWithBasePath
-          src="assets/img/products/phone-add-1.png"
-          alt="placeholder"
-        />
-        <Link to="#">
-          <X
-            className="x-square-add remove-product"
-            onClick={handleRemoveProduct}
-          />
-        </Link>
-      </div>
-      <div className="phone-img">
-        <ImageWithBasePath
-          src="assets/img/products/phone-add-2.png"
-          alt="placeholder"
-        />
-        <Link to="#">
-          <X
-            className="x-square-add remove-product"
-            onClick={handleRemoveProduct1}
-          />
-        </Link>
-      </div>
-    </>
-  )}
+    </Link>
+  </div>
+ 
+)}
+
+{selectedImage && typeof selectedImage === 'string' && (
+  <img
+    src={selectedImage}
+    alt="Existing thumbnail"
+    width="100"
+    height="100"
+  />
+)}
 </div>
                           </div>
                         </div>
