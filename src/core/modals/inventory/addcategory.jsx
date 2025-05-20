@@ -1,11 +1,11 @@
 import React, { useState } from "react";
+import PropTypes from 'prop-types';
 import { Link } from "react-router-dom";
 import { all_routes } from "../../../Router/all_routes";
 import {useCreateCategoryMutation } from "../../redux/api/productApi";
-
+import { Modal } from 'bootstrap';
 const AddCategory = ({onSubmit}) => {
  const [categoryName, setCategoryName] = useState('');
-  const [subCategoryName, setSubCategoryName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
  const [createCategory] = useCreateCategoryMutation();
   const handleSubmit = async (e) => { 
@@ -21,7 +21,7 @@ const AddCategory = ({onSubmit}) => {
       onSubmit(response.data); // Pass created category back to parent
       // Close modal
       document.getElementById('add-units-category').click();
-      const modal = bootstrap.Modal.getInstance(document.getElementById('add-units-category'));
+      const modal = Modal.getInstance(document.getElementById('add-units-category'));
       modal.hide();
       alert("Category added successfully")
     } catch (error) {
@@ -30,7 +30,9 @@ const AddCategory = ({onSubmit}) => {
       setIsLoading(false);
     }
   };
-
+  AddCategory.propTypes = {
+    onSubmit: PropTypes.func.isRequired,
+  };
   return (
     <div className="modal fade" id="add-units-category">
       <div className="modal-dialog modal-dialog-centered">
@@ -75,5 +77,6 @@ const AddCategory = ({onSubmit}) => {
     </div>
   );
 };
+
 
 export default AddCategory;

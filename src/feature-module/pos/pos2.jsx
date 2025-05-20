@@ -191,7 +191,7 @@ const handleEmptyCart = async()=> {
     { value: "25%", label: "25%" },
     { value: "30%", label: "30%" },
   ];
-
+console.log("filteredProducts", filteredProducts);
 
   return (
     <div className="main-wrapper">
@@ -212,7 +212,7 @@ const handleEmptyCart = async()=> {
                   >
                     <Link to="#">
                       <ImageWithBasePath
-                        src="assets/img/categories/all-products.svg"
+                        src="assets/img/categories/category-01.png"
                         alt="All Products"
                       />
                     </Link>
@@ -225,7 +225,7 @@ const handleEmptyCart = async()=> {
                     <div className="owl-item">
                       <Link to="#">
                         <ImageWithBasePath
-                          src="assets/img/categories/category-06.svg"
+                          src="assets/img/categories/category-01.png"
                           alt="Loading"
                         />
                       </Link>
@@ -243,7 +243,7 @@ const handleEmptyCart = async()=> {
                       >
                         <Link to="#">
                           <ImageWithBasePath
-                            src={item.icon || "assets/img/categories/default-category.svg"}
+                            src={"assets/img/categories/category-01.png"}
                             alt={item.name}
                           />
                         </Link>
@@ -301,14 +301,16 @@ const handleEmptyCart = async()=> {
                               <div className="product-info card" onClick={() => addToCart(product?._id)}
                                   >
                                 <Link to="#" className="pro-img">
-                                  <ImageWithBasePath
-                                    src={"assets/img/products/pos-product-17.png"}
+                                  {/* <ImageWithBasePath
+                                    src={product?.thumbnail || "assets/img/products/pos-product-17.png"}
                                 
                                     alt={product?.productName || product?.name || "Product"}
                                     onError={(e) => {
                                       e.target.src = "assets/img/products/default-product.svg";
                                     }}
-                                  />
+                                  /> */}
+                                  <img src={product?.thumbnail || "assets/img/products/pos-product-17.png"} alt={product?.productName || product?.name || "Product"}     width="100"
+    height="100" />
                                   <span><i className="ti ti-circle-check-filled" /></span>
                                 </Link>
                                 <h6 className="cat-name">
@@ -395,11 +397,14 @@ const handleEmptyCart = async()=> {
                             data-bs-target="#products"
                           >
                             <Link to="#" className="pro-img">
-                              <ImageWithBasePath
-                                src={item?.product?.image?.[0]}
+                              {/* <ImageWithBasePath
+                                src={item?.product?.thumbnail}
                                 alt={item?.product?.productName}
                                 width={20}
-                              />
+                              /> */}
+                              <img      src={item?.product?.thumbnail}
+                                alt={item?.product?.productName}
+                                width={30} height={40} />
                             </Link>
                             <div className="info">
                               <span>{item?.product?.sku}</span>
@@ -619,164 +624,7 @@ const handleEmptyCart = async()=> {
   </div>
   {/* Print Receipt */} 
   <PrintReceiptModal user={user} serverCart={serverCart} amount={amount}/>
-    <div
-      className="modal fade modal-default"
-      id="print-receipt"
-      aria-labelledby="print-receipt"
-    >
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content">
-          <div className="modal-body">
-            <div className="icon-head text-center">
-              <Link to="#">
-                <ImageWithBasePath
-                  src="assets/img/logo.png"
-                  width={100}
-                  height={30}
-                  alt="Company Logo"
-                />
-              </Link>
-            </div>
-            <div className="text-center info text-center">
-              <h6>{user?.company}</h6>
-              <p className="mb-0">Phone Number: +91 9876665656</p>
-              <p className="mb-0">
-                Email: <Link to="mailto:example@gmail.com">company@gmail.com</Link>
-              </p>
-            </div>
-            <div className="tax-invoice">
-              <h6 className="text-center">Tax Invoice</h6>
-              <div className="row">
-                <div className="col-sm-12 col-md-6">
-                  <div className="invoice-user-name">
-                    <span>Name: </span>John Doe
-                  </div>
-                  <div className="invoice-user-name">
-                    <span>Invoice No: </span>CS132453
-                  </div>
-                </div>
-                <div className="col-sm-12 col-md-6">
-                  <div className="invoice-user-name">
-                    <span>Customer Id: </span>#LL93784
-                  </div>
-                  <div className="invoice-user-name">
-                    <span>Date: </span> {new Date().toLocaleDateString()}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <table className="table-borderless w-100 table-fit">
-              <thead>
-                <tr>
-                  <th># Item</th>
-                  <th>Price</th>
-                  <th>Qty</th>
-                  <th className="text-end">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {
-                  serverCart?.length > 0 ? (
-                    serverCart?.map((item , index)=> {
-                      
-                      return(   <tr key={item?._id}>
-                        <td>{index+1}. {item?.productName}</td>
-                        <td>{item?.saleRate}</td>
-                        <td>{item?.quantity}</td>
-                        <td className="text-end">{item?.saleRate * item?.quantity}</td>
-                      </tr>)
-                 
-                })) : ( <tr className="empty-cart">
-                    <td className="fs-24 mb-1">
-                      <i className="ti ti-shopping-cart" />
-                    </td>
-                    <td className="fw-bold">No Products Selected</td>
-                  </tr> )
-                }
-            <tr>
-                          <td>Sub Total</td>
-                          <td className="text-end">Rs {amount?.subtotal}</td>
-                        </tr>
-                        <tr>
-                          <td>Tax (GST )</td>
-                          <td className="text-end">Rs {amount?.tax}</td>
-                        </tr>
-                        {/* <tr>
-                          <td>Shipping</td>
-                          <td className="text-end">$40.21</td>
-                        </tr> */}
-                        <tr>
-                          <td>Sub Total</td>
-                          <td className="text-end">Rs {amount?.subtotal}</td>
-                        </tr>
-                        <tr>
-                          <td className="text-danger">Total Savings </td>
-                          <td className="text-danger text-end">Rs {amount?.discount}</td>
-                        </tr>
-                        <tr>
-                          <td>Total</td>
-                          <td className="text-end">Rs {amount?.total}</td>
-                        </tr>
-                <tr>
-                  <td colSpan={4}>
-                    <table className="table-borderless w-100 table-fit">
-                      <tbody>
-                        <tr>
-                          <td className="fw-bold">Sub Total :</td>
-                          <td className="text-end"> Rs {amount?.subtotal}</td>
-                        </tr>
-                        <tr>
-                          <td className="fw-bold">Savings :</td>
-                          <td className="text-end">-Rs {amount?.discount}</td>
-                        </tr>
-                        {/* <tr>
-                          <td className="fw-bold">Shipping :</td>
-                          <td className="text-end">0.00</td>
-                        </tr> */}
-                        <tr>
-                          <td className="fw-bold">Tax (GST) :</td>
-                          <td className="text-end">Rs {amount?.tax}</td>
-                        </tr>
-                        <tr>
-                          <td className="fw-bold">Total Bill :</td>
-                          <td className="text-end">Rs {amount?.total}</td>
-                        </tr>
-                        <tr>
-                          <td className="fw-bold">Due :</td>
-                          <td className="text-end">$0.00</td>
-                        </tr>
-                        <tr>
-                          <td className="fw-bold">Total Payable :</td>
-                          <td className="text-end">Rs {amount?.total}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <div className="text-center invoice-bar">
-              <div className="border-bottom border-dashed">
-                <p>
-                  **VAT against this challan is payable through central
-                  registration. Thank you for your business!
-                </p>
-              </div>
-              {/* <Link to="#">
-                <ImageWithBasePath src="assets/img/barcode/barcode-03.jpg" alt="Barcode" />
-              </Link> */}
-              {/* <p className="text-dark fw-bold">Sale 31</p> */}
-              <p>Thank You For Shopping With Us. Please Come Again</p>
-              <Link to="#" className="btn btn-md btn-primary">
-                Print Receipt
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    {/* /Print Receipt */}
-    {/* Products */}
+
     </div>
   );
 };

@@ -33,6 +33,7 @@ import { useGetNewProductIdQuery, useGetStoreListQuery, useCreateProductMutation
 import { useGetCategoryListQuery } from "../../core/redux/api/categoryApi";
 import { useParams, useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
+
 const initialFormState = {
   saleRate: 0,
   productId: '',
@@ -67,7 +68,7 @@ const ProductForm = ({isEditMode}) => {
   ProductForm.propTypes = {
     isEditMode: PropTypes.bool.isRequired,
   };
-  
+   
   const [imageFile, setImageFile] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [subCategoryOptions, setsubCategoryOptions] = useState([]);

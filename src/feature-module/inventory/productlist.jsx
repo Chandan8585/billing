@@ -19,7 +19,7 @@ import { useDeleteProductMutation, useGetProductListQuery } from "../../core/red
 
 const ProductList = () => { 
   const { data: dataSource, isLoading, error, refetch } = useGetProductListQuery();
-  // const dispatch = useDispatch();
+  const dispatch = useDispatch();
   const [deleteProduct] = useDeleteProductMutation();
   const [productToDelete, setProductToDelete] = useState(null);
   const data = useSelector((state) => state.rootReducer.toggle_header);

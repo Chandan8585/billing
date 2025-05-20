@@ -1444,80 +1444,13 @@ const Pos5 = () => {
                     </div>
                   </div>
                 </div>
-                <div className="block-section payment-method">
-                  <h5 className="mb-2">Select Payment</h5>
-                  <div className="row align-items-center justify-content-center methods g-2 mb-4">
-                    <div className="col-sm-6 col-md-4 col-xl d-flex">
-                      <Link
-                        to="#"
-                        className="payment-item flex-fill"
-                        data-bs-toggle="modal"
-                        data-bs-target="#payment-cash"
-                      >
-                        <ImageWithBasePath src="assets/img/icons/cash-icon.svg" alt="img" />
-                        <p className="fw-medium">Cash</p>
-                      </Link>
-                    </div>
-                    <div className="col-sm-6 col-md-4 col-xl d-flex">
-                      <Link
-                        to="#"
-                        className="payment-item flex-fill"
-                        data-bs-toggle="modal"
-                        data-bs-target="#payment-card"
-                      >
-                        <ImageWithBasePath src="assets/img/icons/card.svg" alt="img" />
-                        <p className="fw-medium">Card</p>
-                      </Link>
-                    </div>
-                    <div className="col-sm-6 col-md-4 col-xl d-flex">
-                      <Link
-                        to="#"
-                        className="payment-item flex-fill"
-                        data-bs-toggle="modal"
-                        data-bs-target="#payment-points"
-                      >
-                        <ImageWithBasePath src="assets/img/icons/points.svg" alt="img" />
-                        <p className="fw-medium">Points</p>
-                      </Link>
-                    </div>
-                    <div className="col-sm-6 col-md-4 col-xl d-flex">
-                      <Link
-                        to="#"
-                        className="payment-item flex-fill"
-                        data-bs-toggle="modal"
-                        data-bs-target="#payment-deposit"
-                      >
-                        <ImageWithBasePath src="assets/img/icons/deposit.svg" alt="img" />
-                        <p className="fw-medium">Deposit</p>
-                      </Link>
-                    </div>
-                    <div className="col-sm-6 col-md-4 col-xl d-flex">
-                      <Link
-                        to="#"
-                        className="payment-item flex-fill"
-                        data-bs-toggle="modal"
-                        data-bs-target="#payment-cheque"
-                      >
-                        <ImageWithBasePath src="assets/img/icons/cheque.svg" alt="img" />
-                        <p className="fw-medium">Cheque</p>
-                      </Link>
-                    </div>
-                  </div>
-                  <div className="btn-block m-0">
-                    <Link
-                      className="btn btn-teal w-100"
-                      to="#"
-                    >
-                      Pay : $56590.00
-                    </Link>
-                  </div>
-                </div>
+              
               </aside>
             </div>
             {/* /Order Details */}
           </div>
         </div>
-      </div>
+      </div> 
       <PosModals/>
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useCreateUnitMutation } from "../../redux/api/productApi";
-
+import { Modal } from 'bootstrap';
+import PropTypes from 'prop-types';
 const Addunits = ({ onSubmit }) => {
   const [unitName, setUnitName] = useState('');
   const [shortName, setShortName] = useState('');
@@ -28,7 +29,7 @@ const Addunits = ({ onSubmit }) => {
     
     // Close modal with fallback
     const modalEl = document.getElementById('add-unit');
-    const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+    const modal = Modal.getInstance(modalEl) || new Modal(modalEl);
     modal.hide();
     
     setUnitName('');
@@ -41,6 +42,9 @@ const Addunits = ({ onSubmit }) => {
     setIsLoading(false);
   }
 };
+  Addunits.propTypes = {
+    onSubmit: PropTypes.func.isRequired,
+  };
   return (
     <div className="modal fade" id="add-unit">
       <div className="modal-dialog modal-dialog-centered custom-modal-two">

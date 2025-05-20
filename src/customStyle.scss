@@ -3,8 +3,20 @@
 
 $__basecolor: #1B2850;
 
-.css-1u9des2-indicatorSeparator {
-  display: none;
+@media print {
+  .modal {
+    position: absolute;
+    height: auto;
+    z-index: 9999;
+  }
+}
+
+/* For showing modal content during print preparation */
+.force-show {
+  display: block !important;
+  opacity: 1 !important;
+  position: absolute !important;
+  left: -9999px !important;
 }
 
 // .ant-tooltip {

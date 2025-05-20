@@ -1,32 +1,51 @@
 import React, { useRef } from 'react';
-import { useReactToPrint } from 'react-to-print';
 import ImageWithBasePath from '../../core/img/imagewithbasebath';
-import { Link } from 'react-router-dom';
+import PropTypes from 'prop-types';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 const PrintReceiptModal = ({ user, serverCart, amount }) => {
- const receiptRef = useRef();
+  const receiptRef = useRef();
 
-  const handlePrint = useReactToPrint({
-    content: () => receiptRef.current,
-    pageStyle: `
-      @page { size: auto; margin: 5mm; }
-      body { font-family: Arial; }
-      .print-content { padding: 20px; }
-      table { width: 100%; border-collapse: collapse; }
-      th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
-      .text-end { text-align: right; }
-      .no-print { display: none; }
-    `,
-    onAfterPrint: () => console.log('Printed successfully!')
-  });
+  const handleGeneratePDF = () => {
+    const input = receiptRef.current;
+    
+    if (!input) {
+      console.error('PDF content ref is not available');
+      return;
+    }
+
+    html2canvas(input, {
+      scale: 2, // Higher quality
+      logging: false,
+      useCORS: true,
+      allowTaint: true
+    }).then((canvas) => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm'
+      });
+
+      // Calculate PDF dimensions to maintain aspect ratio
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      
+      // Generate a filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      pdf.save(`invoice-${timestamp}.pdf`);
+    });
+  };
 
   return (
     <div className="modal fade" id="print-receipt" tabIndex="-1" aria-hidden="true">
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-body p-4">
-            {/* This div will be printed */}
-            <div className="print-content" ref={receiptRef}>
+            {/* PDF content with explicit ID and ref */}
+            <div id="print-content" ref={receiptRef} style={{ backgroundColor: 'white', padding: '20px' }}>
               <div className="text-center mb-3">
                 <ImageWithBasePath 
                   src="assets/img/logo.png" 
@@ -40,7 +59,7 @@ const PrintReceiptModal = ({ user, serverCart, amount }) => {
               </div>
               
               <div className="border-top border-bottom py-2 my-3">
-                <h6 className="text-center mb-0">TAX INVOICE</h6>
+                <h6 className="text-center mb-0">ORDER INVOICE</h6>
               </div>
 
               <div className="row mb-3">
@@ -65,7 +84,7 @@ const PrintReceiptModal = ({ user, serverCart, amount }) => {
                 <tbody>
                   {serverCart?.map((item, index) => (
                     <tr key={index}>
-                      <td>{item?.productName}</td>
+                      <td>{item?.product?.productName}</td>
                       <td className="text-end">₹{item.saleRate}</td>
                       <td className="text-end">{item.quantity}</td>
                       <td className="text-end">₹{(item.saleRate * item.quantity)}</td>
@@ -87,15 +106,16 @@ const PrintReceiptModal = ({ user, serverCart, amount }) => {
               </div>
             </div>
 
-            <div className="text-center mt-4 no-print">
+            {/* PDF controls - won't appear in PDF */}
+            <div className="text-center mt-4">
               <button 
-                onClick={handlePrint}
-                className="btn btn-primary px-4"
+                onClick={handleGeneratePDF}
+                className="btn btn-primary px-4 me-2"
               >
-                Print Receipt
+                Download PDF
               </button>
               <button 
-                className="btn btn-secondary px-4 ms-2" 
+                className="btn btn-secondary px-4" 
                 data-bs-dismiss="modal"
               >
                 Close
@@ -106,6 +126,27 @@ const PrintReceiptModal = ({ user, serverCart, amount }) => {
       </div>
     </div>
   );
+};
+
+PrintReceiptModal.propTypes = {
+  user: PropTypes.shape({
+    company: PropTypes.string,
+  }),
+  serverCart: PropTypes.arrayOf(
+    PropTypes.shape({
+      product: PropTypes.shape({
+        productName: PropTypes.string,
+      }),
+      saleRate: PropTypes.number,
+      quantity: PropTypes.number,
+    })
+  ),
+  amount: PropTypes.shape({
+    subtotal: PropTypes.number,
+    tax: PropTypes.number,
+    discount: PropTypes.number,
+    total: PropTypes.number,
+  }),
 };
 
 export default PrintReceiptModal;
