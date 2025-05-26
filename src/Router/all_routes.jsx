@@ -3,6 +3,7 @@ export const all_routes = {
   newdashboard: "/index",
   dashboard: "/admin-dashboard",
   productlist: "/product-list",
+  transactionReport: "/transaction-report",
   editproduct: "/edit-product/:_id",  // Use ':id' instead of ':sku' for consistency
   productdetails: "/product-details/:_id",
   addproduct: "/add-product",

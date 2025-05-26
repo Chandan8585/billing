@@ -278,6 +278,8 @@ import Faq from "../feature-module/content/faq";
 import Activities from "../feature-module/pages/activities";
 import Pricing from "../feature-module/pages/pricing";
 import Contacts from "../feature-module/Application/contacts";
+import { element } from "prop-types";
+import TransactionReport from "../feature-module/inventory/transactionReport";
 export const publicRoutes = [
   {
     id: 1,
@@ -305,6 +307,13 @@ export const publicRoutes = [
     path: routes.editproduct,
     name: "edit-product",
     element: <EditProduct />,
+    route: Route,
+  },
+  {
+    id: 301,
+    path: routes.transactionReport,
+    name: "transaction-report",
+    element: <TransactionReport/>,
     route: Route,
   },
   {

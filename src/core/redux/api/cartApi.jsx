@@ -16,21 +16,19 @@ const extendedCartApi = productApi.injectEndpoints({
         url: '/cart/add',
         method: 'POST',
         body: product
-      }),
-   
+      }),   
       invalidatesTags: ['Cart']
     }),
     updateCartQuantity: builder.mutation({
-      query: ({ productId, quantity }) => {
-        // Ensure productId is a string
-        const id = typeof productId === 'object' ? productId._id || productId.id : productId;
-        
-        return {
-          url: `cart/${id}`,
-          method: 'PATCH',
-          body: { quantity },
-        };
-      },
+    query: ({ productId, quantity }) => {
+      const id = typeof productId === 'object' ? productId._id || productId.id : productId;
+      
+      return {
+        url: `cart/${id}`,
+        method: 'PATCH',
+        body: { quantity },
+      };
+    },
       invalidatesTags: ['Cart'],
     }),
 
@@ -51,6 +49,7 @@ const extendedCartApi = productApi.injectEndpoints({
       query: () => '/cart/totals',
       providesTags: ['Cart'],
     }),
+
   }),
   overrideExisting: false,
 });

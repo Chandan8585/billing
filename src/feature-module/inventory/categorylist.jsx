@@ -12,13 +12,23 @@ import { useGetCategoryListQuery } from "../../core/redux/api/productApi";
 
 const CategoryList = () => {
 // const dataSource = useSelector((state) => state.rootReducer.categotylist_data);
-  const { data: dataSource, isLoading: categoryLoading, error: categoryError } = useGetCategoryListQuery(undefined,{refetchOnMountOrArgChange: true}); 
+  const { data: dataSource, isLoading: categoryLoading, error: categoryError } = useGetCategoryListQuery(); 
 
   const columns = [
     {
       title: "Category Code",
       dataIndex: "categoryCode",
       sorter: (a, b) => a.category.length - b.category.length,
+    },
+    {
+      title: "Category Image",
+      dataIndex: "category",
+      render: (user) => (
+        <span className="badge bg-success fw-medium fs-10">
+          {user?.firstName || 'Admin'}
+        </span>
+      ),
+      sorter: (a, b) => a.status.length - b.status.length,
     },
     {
       title: "Category Name",
@@ -32,10 +42,10 @@ const CategoryList = () => {
     },
     {
       title: "Created By",
-      dataIndex: "Admin",
-      render: (text) => (
+      dataIndex: "user",
+      render: (user) => (
         <span className="badge bg-success fw-medium fs-10">
-          {text || 'Admin'}
+          {user?.firstName || 'Admin'}
         </span>
       ),
       sorter: (a, b) => a.status.length - b.status.length,
@@ -66,7 +76,8 @@ const CategoryList = () => {
       ),
     },
   ];
-
+if(categoryLoading) return <>loading</>
+if(categoryError) return <>Error</>
   return (
     <div>
       <div className="page-wrapper">

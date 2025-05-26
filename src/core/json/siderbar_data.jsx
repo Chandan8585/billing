@@ -156,7 +156,13 @@ export const SidebarData = [
         icon: 'brand-unity',
         showSubRoute: false,
         submenu: false,
-      },
+      },{
+        label: "Sales Report",
+        link: "/transaction-report",
+        icon: 'chart-bar',
+        showSubRoute: false,
+        submenu: false,
+      }
       // {
       //   label: "Variant Attributes",
       //   link: "/variant-attributes",

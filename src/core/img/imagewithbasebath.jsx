@@ -17,7 +17,7 @@ const ImageWithBasePath = ({
   return (
     <img
       src={imageSrc}
-      alt={alt || altText}
+      alt={alt || "altText"}
       className={className}
       height={height}
       width={width}

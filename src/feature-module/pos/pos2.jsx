@@ -11,13 +11,13 @@ import {
   Trash2,
   UserPlus,
 } from "react-feather";
-import Select from "react-select" 
+import Select from "react-select"
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 // import PosModals from "../../core/modals/pos-modal/posModals";
 import CounterThree from "../../core/common/counter/counterThree";
-import {  useFilterProductQuery, useGetCategoryListQuery , useGetProductListQuery } from "../../core/redux/api/productApi";
+import { useFilterProductQuery, useGetCategoryListQuery, useGetProductListQuery } from "../../core/redux/api/productApi";
 import { useGetCartQuery, useRemoveFromCartMutation, useAddToCartMutation, useEmptyCartMutation, useGetCartTotalsQuery } from "../../core/redux/api/cartApi";
 import Pos2Counter from "./pos2Counter";
 import Item from "antd/es/list/Item";
@@ -25,97 +25,105 @@ import { useDebounce } from "use-debounce";
 import { Empty } from "antd";
 import { useSelector } from "react-redux";
 import PrintReceiptModal from "./PrintReceiptModal";
+import { useCreateOrderMutation } from "../../core/redux/api/OrderApi";
 
 const Pos2 = () => {
   const { user } = useSelector((state) => state.user);
   console.log("userstatedata", user);
-  const {data: categoryList, isLoading: categoryLoading} = useGetCategoryListQuery([]);
+  const { data: categoryList, isLoading: categoryLoading } = useGetCategoryListQuery([]);
   const [allProducts, setAllProducts] = useState([]);
-const { data: initialProducts } = useGetProductListQuery();
-const [addToCartMutation] = useAddToCartMutation();
- const [removeFromCart] = useRemoveFromCartMutation();
- const [emptyCart] = useEmptyCartMutation();
-//  deletProductFromCart("asdjf");
-useEffect(() => {
-  if (initialProducts) {
-    setAllProducts(initialProducts.data || []);
-  }
-}, [initialProducts]);
-useEffect(()=>{
+  const { data: initialProducts } = useGetProductListQuery();
+  const [addToCartMutation] = useAddToCartMutation();
+  
+  const [removeFromCart] = useRemoveFromCartMutation();
+  const [emptyCart] = useEmptyCartMutation();
+  //  deletProductFromCart("asdjf");
+  useEffect(() => {
+    if (initialProducts) {
+      setAllProducts(initialProducts.data || []);
+    }
+  }, [initialProducts]);
+  useEffect(() => {
 
-}, []);
+  }, []);
   const [filters, setFilters] = useState({
     category: 'all',
     search: ''
   });
-  const { data: serverCart ,refetch: refetchCart  } = useGetCartQuery();
+  const { data: serverCart, refetch: refetchCart } = useGetCartQuery();
+  const [createOrder, { isLoading }] = useCreateOrderMutation();
+  console.log("serverCart", serverCart);
+  const [activeTab, setActiveTab] = useState('all');
+  const [searchInput, setSearchInput] = useState('');
 
-  console.log("serverCart" , serverCart);
- const [activeTab , setActiveTab] = useState('all');
- const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch] = useDebounce(searchInput, 800);
 
- const [debouncedSearch] = useDebounce(searchInput, 800);
-
-
-const handleCategoryClick = (categoryId) => {
-  setFilters(prev => ({
-    ...prev,
-    category: categoryId
-  }));
-};
-
-// useEffect(() => {
-//   setFilters(prev => ({...prev, search: debouncedSearch[0]}));
-// }, [debouncedSearch]);
-// debouncedSearch
-const queryParams = useMemo(() => ({
-  category: filters.category === 'all' ? undefined : filters.category,
-  search: debouncedSearch || undefined,
-}), [filters.category, debouncedSearch]);
-
-const { data: filteredProducts, isLoading: productsLoading } = useFilterProductQuery(queryParams);
-const {data: amount} = useGetCartTotalsQuery();
-console.log("amount", amount);
-const productsToDisplay = useMemo(() => {
-  if (filters.category === 'all' && !debouncedSearch) {
-    return initialProducts?.data || [];
+  const handleCheckOut = async() => {
+    try {
+      const result = await createOrder().unwrap();
+    } catch (error) {
+      alert("something went wrong");
+    }
   }
-  return filteredProducts?.data || [];
-}, [initialProducts, filteredProducts, filters.category, debouncedSearch]);
-const [cart , setCart] = useState([]);
-const Location = useLocation();
-const [showAlert1 , setShowAlert1] = useState(true)
-const cartItems = useMemo(() => {
-  return serverCart?.map(item => ({
-    ...item,
-    key: item?.product?._id
-  }));
-}, [serverCart]);
+  const handleCategoryClick = (categoryId) => {
+    setFilters(prev => ({
+      ...prev,
+      category: categoryId
+    }));
+  };
 
-const addToCart = async(productId) => {
-  try {
-    await addToCartMutation({productId, quantity: 1});
-    refetchCart();
-  } catch (error) {
-    console.log(error);
+  // useEffect(() => {
+  //   setFilters(prev => ({...prev, search: debouncedSearch[0]}));
+  // }, [debouncedSearch]);
+  // debouncedSearch
+  const queryParams = useMemo(() => ({
+    category: filters.category === 'all' ? undefined : filters.category,
+    search: debouncedSearch || undefined,
+  }), [filters.category, debouncedSearch]);
+
+  const { data: filteredProducts, isLoading: productsLoading } = useFilterProductQuery(queryParams);
+  const { data: amount } = useGetCartTotalsQuery();
+  console.log("amount", amount);
+  const productsToDisplay = useMemo(() => {
+    if (filters.category === 'all' && !debouncedSearch) {
+      return initialProducts?.data || [];
+    }
+    return filteredProducts?.data || [];
+  }, [initialProducts, filteredProducts, filters.category, debouncedSearch]);
+  const [cart, setCart] = useState([]);
+  const Location = useLocation();
+  const [showAlert1, setShowAlert1] = useState(true)
+  const cartItems = useMemo(() => {
+    return serverCart?.map(item => ({
+      ...item,
+      key: item?.product?._id
+    }));
+  }, [serverCart]);
+
+  const addToCart = async (productId) => {
+    try {
+      await addToCartMutation({ productId, quantity: 1 });
+      refetchCart();
+    } catch (error) {
+      console.log(error);
+    }
   }
-}
-const handleRemoveFromCart = async(productId) => {
-  try {
-    await removeFromCart(productId)
-    refetchCart();
-  } catch (error) {
-    console.log(error);
+  const handleRemoveFromCart = async (productId) => {
+    try {
+      await removeFromCart(productId)
+      refetchCart();
+    } catch (error) {
+      console.log(error);
+    }
   }
-}
-const handleEmptyCart = async()=> {
-  try {
-    await emptyCart();
-    refetchCart();
-  } catch (error) {
-    console.log(error);
+  const handleEmptyCart = async () => {
+    try {
+      await emptyCart();
+      refetchCart();
+    } catch (error) {
+      console.log(error);
+    }
   }
-}
   const settings = {
     dots: false,
     autoplay: false,
@@ -165,7 +173,7 @@ const handleEmptyCart = async()=> {
     { value: "airpod", label: "Airpod 2" },
     { value: "oldest", label: "Oldest" },
   ];
-  
+
   const gstOptions = [
     { value: "choose", label: "Choose" },
     { value: "gst5", label: "GST 5%" },
@@ -182,7 +190,7 @@ const handleEmptyCart = async()=> {
     { value: "25", label: "25" },
     { value: "30", label: "30" },
   ];
-  
+
   const percentageOptions = [
     { value: "0%", label: "0%" },
     { value: "10%", label: "10%" },
@@ -191,7 +199,7 @@ const handleEmptyCart = async()=> {
     { value: "25%", label: "25%" },
     { value: "30%", label: "30%" },
   ];
-console.log("filteredProducts", filteredProducts);
+  console.log("filteredProducts", filteredProducts);
 
   return (
     <div className="main-wrapper">
@@ -201,12 +209,12 @@ console.log("filteredProducts", filteredProducts);
             {/* Products */}
             <div className="col-md-12 col-lg-7 col-xl-8">
               <div className="pos-categories tabs_wrapper pb-0">
-               
+
                 <div className="d-flex align-items-center justify-content-between">
                   <h4 className="mb-3">Categories</h4>
                 </div>
                 <Slider {...settings} className="tabs owl-carousel pos-category">
-                <div 
+                  <div
                     className={`owl-item ${activeTab === 'all' ? 'active' : ''}`}
                     onClick={() => handleCategoryClick('all')}
                   >
@@ -221,7 +229,7 @@ console.log("filteredProducts", filteredProducts);
                     </h6>
                     {/* <span>{filteredProducts?.count || 0} Items</span> */}
                   </div>
-                    {categoryLoading ? (
+                  {categoryLoading ? (
                     <div className="owl-item">
                       <Link to="#">
                         <ImageWithBasePath
@@ -236,7 +244,7 @@ console.log("filteredProducts", filteredProducts);
                     </div>
                   ) : (
                     categoryList?.map((item) => (
-                      <div 
+                      <div
                         key={item._id}
                         className={`owl-item ${activeTab === item.name.toLowerCase() ? 'active' : ''}`}
                         onClick={() => handleCategoryClick(item?._id)}
@@ -256,7 +264,7 @@ console.log("filteredProducts", filteredProducts);
                       </div>
                     ))
                   )}
-                 
+
                 </Slider>
                 <div className="pos-products">
                   <div className="d-flex align-items-center justify-content-between">
@@ -269,39 +277,39 @@ console.log("filteredProducts", filteredProducts);
                         type="text"
                         className="form-control"
                         placeholder="Search Product"
-                        onChange={(e)=> setSearchInput(e.target.value)}
+                        onChange={(e) => setSearchInput(e.target.value)}
                         value={searchInput}
                       />
                     </div>
                   </div>
                   <div className="tabs_container">
-                  
+
                     <div className={`tab_content ${activeTab === 'all' ? 'active' : ''} `} data-tab="filtered">
-                    <div className="row">
-                      {productsLoading ? (
-                        // Loading state
-                        [...Array(8)].map((_, index) => (
-                          <div key={`skeleton-${index}`} className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                            <div className="product-info card">
-                              <div className="pro-img skeleton-box" style={{ height: '180px' }} />
-                              <h6 className="cat-name skeleton-box" style={{ width: '80%', height: '20px' }} />
-                              <h6 className="product-name skeleton-box" style={{ width: '90%', height: '24px' }} />
-                              <div className="d-flex align-items-center justify-content-between price">
-                                <span className="skeleton-box" style={{ width: '40%', height: '18px' }} />
-                                <p className="skeleton-box" style={{ width: '30%', height: '18px' }} />
+                      <div className="row">
+                        {productsLoading ? (
+                          // Loading state
+                          [...Array(8)].map((_, index) => (
+                            <div key={`skeleton-${index}`} className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
+                              <div className="product-info card">
+                                <div className="pro-img skeleton-box" style={{ height: '180px' }} />
+                                <h6 className="cat-name skeleton-box" style={{ width: '80%', height: '20px' }} />
+                                <h6 className="product-name skeleton-box" style={{ width: '90%', height: '24px' }} />
+                                <div className="d-flex align-items-center justify-content-between price">
+                                  <span className="skeleton-box" style={{ width: '40%', height: '18px' }} />
+                                  <p className="skeleton-box" style={{ width: '30%', height: '18px' }} />
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))
-                      ) : filteredProducts?.data?.length > 0 ? (
-                        // Products grid
-                        filteredProducts?.data?.map((product) => (
-                          product && ( 
-                            <div key={product?._id} className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
-                              <div className="product-info card" onClick={() => addToCart(product?._id)}
-                                  >
-                                <Link to="#" className="pro-img">
-                                  {/* <ImageWithBasePath
+                          ))
+                        ) : filteredProducts?.data?.length > 0 ? (
+                          // Products grid
+                          filteredProducts?.data?.map((product) => (
+                            product && (
+                              <div key={product?._id} className="col-sm-6 col-md-6 col-lg-4 col-xl-3">
+                                <div className="product-info card" onClick={() => addToCart(product?._id)}
+                                >
+                                  <Link to="#" className="pro-img">
+                                    {/* <ImageWithBasePath
                                     src={product?.thumbnail || "assets/img/products/pos-product-17.png"}
                                 
                                     alt={product?.productName || product?.name || "Product"}
@@ -309,44 +317,62 @@ console.log("filteredProducts", filteredProducts);
                                       e.target.src = "assets/img/products/default-product.svg";
                                     }}
                                   /> */}
-                                  <img src={product?.thumbnail || "assets/img/products/pos-product-17.png"} alt={product?.productName || product?.name || "Product"}     width="100"
-    height="100" />
-                                  <span><i className="ti ti-circle-check-filled" /></span>
-                                </Link>
-                                <h6 className="cat-name">
-                                  <Link to="#">
-                                    {typeof product?.category === 'object' 
-                                      ? product?.category?.name 
-                                      : product?.category || 'Uncategorized'}
+                                    <div className="product-img-container" style={{
+                                      width: '200px',
+                                      height: '100px',
+                                      overflow: 'hidden',
+                                      display: 'flex',
+                                      justifyContent: 'center',
+                                      alignItems: 'center',
+                                      backgroundColor: '#f5f5f5' // Optional: fallback background
+                                    }}>
+                                      <img
+                                        src={product?.thumbnail || "assets/img/products/pos-product-17.png"}
+                                        alt={product?.productName || product?.name || "Product"}
+                                        style={{
+                                          width: '100%',
+                                          height: '100%',
+                                          objectFit: 'contain',
+                                          objectPosition: 'center'
+                                        }}
+                                      />
+                                    </div>
+                                    <span><i className="ti ti-circle-check-filled" /></span>
                                   </Link>
-                                </h6>
-                                <h6 className="product-name">
-                                  <Link to="#">{product?.productName || product?.name || "Unnamed Product"}</Link>
-                                </h6>
-                                <div className="d-flex align-items-center justify-content-between price">
-                                  <span>{product?.quantity || 0} {product?.unit?.unitName || 'Pcs'}</span>
-                                  <p>Rs {(product?.saleRate || product?.price || 0).toFixed(2)}</p>
+                                  <h6 className="cat-name">
+                                    <Link to="#">
+                                      {typeof product?.category === 'object'
+                                        ? product?.category?.name
+                                        : product?.category || 'Uncategorized'}
+                                    </Link>
+                                  </h6>
+                                  <h6 className="product-name">
+                                    <Link to="#">{product?.productName || product?.name || "Unnamed Product"}</Link>
+                                  </h6>
+                                  <div className="d-flex align-items-center justify-content-between price">
+                                    <span>{product?.quantity || 0} {product?.unit?.unitName || 'Pcs'}</span>
+                                    <p>Rs {(product?.saleRate || product?.price || 0).toFixed(2)}</p>
+                                  </div>
                                 </div>
                               </div>
+                            )
+                          ))
+                        ) : (
+                          // Empty state
+                          <div className="col-12 text-center py-5">
+                            <div className="fs-24 mb-3">
+                              <i className="ti ti-shopping-cart" />
                             </div>
-                          )
-                        ))
-                      ) : (
-                        // Empty state
-                        <div className="col-12 text-center py-5">
-                          <div className="fs-24 mb-3">
-                            <i className="ti ti-shopping-cart" />
-                          </div>
-                          <p className="fw-bold">No products found</p>
-                          {filters.search && (
+                            <p className="fw-bold">No products found</p>
+                            {filters.search && (
                               <p className="text-muted">No results for </p>
                             )}
-                        </div>
-                      )}
-                    </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  
+
                 </div>
               </div>
             </div>
@@ -364,7 +390,7 @@ console.log("filteredProducts", filteredProducts);
                     </Link>
                   </div>
                 </div>
-          
+
                 <div className="product-added block-section">
                   <div className="head-text d-flex align-items-center justify-content-between">
                     <h5 className="d-flex align-items-center mb-0">
@@ -373,8 +399,8 @@ console.log("filteredProducts", filteredProducts);
                     <Link
                       to="#"
                       className="d-flex align-items-center link-danger"
-                        data-bs-toggle="modal"
-                         data-bs-target="#delete"
+                      data-bs-toggle="modal"
+                      data-bs-target="#delete"
                     >
                       <span className="me-2">
                         <X className="feather-16" />
@@ -383,66 +409,66 @@ console.log("filteredProducts", filteredProducts);
                     </Link>
                   </div>
                   <div className="product-wrap">
-                
-                  
+
+
                     {
                       serverCart?.length > 0 ? (
-                        serverCart?.map((item)=> {
-                      
-                        return(
-                          <div className="product-list d-flex align-items-center justify-content-between" key={item?.product?._id}>
-                          <div
-                            className="d-flex align-items-center product-info"
-                            data-bs-toggle="modal"
-                            data-bs-target="#products"
-                          >
-                            <Link to="#" className="pro-img">
-                              {/* <ImageWithBasePath
+                        serverCart?.map((item) => {
+
+                          return (
+                            <div className="product-list d-flex align-items-center justify-content-between" key={item?.product?._id}>
+                              <div
+                                className="d-flex align-items-center product-info"
+                                data-bs-toggle="modal"
+                                data-bs-target="#products"
+                              >
+                                <Link to="#" className="pro-img">
+                                  {/* <ImageWithBasePath
                                 src={item?.product?.thumbnail}
                                 alt={item?.product?.productName}
                                 width={20}
                               /> */}
-                              <img      src={item?.product?.thumbnail}
-                                alt={item?.product?.productName}
-                                width={30} height={40} />
-                            </Link>
-                            <div className="info">
-                              <span>{item?.product?.sku}</span>
-                              <h6>
-                                <Link to="#">{item?.product?.productName}</Link>
-                              </h6>
-                              <p className="fw-bold text-teal">{item?.saleRate}</p>
+                                  <img src={item?.product?.thumbnail}
+                                    alt={item?.product?.productName}
+                                    width={30} height={40} />
+                                </Link>
+                                <div className="info">
+                                  <span>{item?.product?.sku}</span>
+                                  <h6>
+                                    <Link to="#">{item?.product?.productName}</Link>
+                                  </h6>
+                                  <p className="fw-bold text-teal">{item?.saleRate}</p>
+                                </div>
+                              </div>
+                              <div className="d-flex  align-items-center gap-3">
+                                <div className="qty-item text-center">
+                                  <Pos2Counter productId={item?.product?._id} initialQuantity={item?.quantity} />
+                                </div>
+                                <div className="action d-flex align-items-center justify-content-center">
+                                  <Link
+                                    className="btn-icon delete-icon"
+                                    to="#"
+                                    onClick={() => handleRemoveFromCart(item?.product?._id)}
+                                  >
+                                    <Trash2 className="feather-14" />
+                                  </Link>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                          <div className="d-flex  align-items-center gap-3">
-                          <div className="qty-item text-center">
-                            <Pos2Counter productId={item?.product?._id} initialQuantity={item?.quantity} />
-                          </div>
-                          <div className="action d-flex align-items-center justify-content-center">
-                            <Link
-                              className="btn-icon delete-icon"
-                              to="#"
-                              onClick={() => handleRemoveFromCart(item?.product?._id)}
-                            >
-                              <Trash2 className="feather-14" />
-                            </Link>
-                          </div>
-                        </div>
-                        </div>
-                        )
-                       })
-                      ) : ( <div className="empty-cart">
+                          )
+                        })
+                      ) : (<div className="empty-cart">
                         <div className="fs-24 mb-1">
                           <i className="ti ti-shopping-cart" />
                         </div>
                         <p className="fw-bold">No Products Selected</p>
-                      </div> )
+                      </div>)
                     }
-                  
-               
+
+
                   </div>
                 </div>
-  
+
                 <div className="block-section">
                   {/* <div className="selling-info">
                     <div className="row g-3">
@@ -515,7 +541,7 @@ console.log("filteredProducts", filteredProducts);
                 <div className="block-section payment-method">
                   <h4>Payment Method</h4>
                   <div className="row align-items-center justify-content-center methods g-3">
-          
+
                     <div className="col-sm-6 col-md-4">
                       <Link
                         to="#"
@@ -544,10 +570,14 @@ console.log("filteredProducts", filteredProducts);
                   <Link
                     className="btn btn-secondary w-100"
                     to="#"
-                      data-bs-target="#print-receipt"
-                      data-bs-toggle="modal"
+                    data-bs-target="#print-receipt"
+                    data-bs-toggle="modal" 
+                   
+                    onClick={() => handleCheckOut()}
+                    disabled={isLoading}
                   >
-                    Grand Total : Rs {amount?.total}
+                    {/* Grand Total : Rs {amount?.total} */}
+                    {isLoading ? 'Processing...' : 'Checkout'}
                   </Link>
                 </div>
                 <div className="btn-row d-sm-flex align-items-center justify-content-between">
@@ -572,14 +602,14 @@ console.log("filteredProducts", filteredProducts);
                     className="btn btn-success d-flex align-items-center justify-content-center flex-fill"
                     data-bs-toggle="modal"
                     // data-bs-target="#payment-completed"
-                     data-bs-target="#hold-order"
-                                       
+                    data-bs-target="#hold-order"
+
                   >
                     <i className="ti ti-cash-banknote me-1" />
                     Payment
                   </Link>
                 </div>
-                
+
               </aside>
             </div>
           </div>
@@ -587,43 +617,43 @@ console.log("filteredProducts", filteredProducts);
       </div>
       {/* <PosModals/> */}
       <div
-    className="modal fade modal-default"
-    id="delete"
-    aria-labelledby="payment-completed"
-  >
-    <div className="modal-dialog modal-dialog-centered">
-      <div className="modal-content">
-        <div className="modal-body p-0">
-          <div className="success-wrap text-center">
-            <form >
-              <div className="icon-success bg-danger-transparent text-danger mb-2">
-                <i className="ti ti-trash" />
+        className="modal fade modal-default"
+        id="delete"
+        aria-labelledby="payment-completed"
+      >
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <div className="modal-body p-0">
+              <div className="success-wrap text-center">
+                <form >
+                  <div className="icon-success bg-danger-transparent text-danger mb-2">
+                    <i className="ti ti-trash" />
+                  </div>
+                  <h3 className="mb-2">Are you Sure!</h3>
+                  <p className="fs-16 mb-3">
+                    The current order will be deleted as no payment has been made so
+                    far.
+                  </p>
+                  <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      className="btn btn-md btn-secondary"
+                      data-bs-dismiss="modal"
+                    >
+                      No, Cancel
+                    </button>
+                    <button type="button" data-bs-dismiss="modal" className="btn btn-md btn-primary" onClick={handleEmptyCart}>
+                      Yes, Delete
+                    </button>
+                  </div>
+                </form>
               </div>
-              <h3 className="mb-2">Are you Sure!</h3>
-              <p className="fs-16 mb-3">
-                The current order will be deleted as no payment has been made so
-                far.
-              </p>
-              <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  className="btn btn-md btn-secondary"
-                  data-bs-dismiss="modal"
-                >
-                  No, Cancel
-                </button>
-                <button type="button" data-bs-dismiss="modal" className="btn btn-md btn-primary" onClick={handleEmptyCart}>
-                  Yes, Delete
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
-  {/* Print Receipt */} 
-  <PrintReceiptModal user={user} serverCart={serverCart} amount={amount}/>
+      {/* Print Receipt */}
+      <PrintReceiptModal user={user} serverCart={serverCart} amount={amount} />
 
     </div>
   );

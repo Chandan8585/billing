@@ -33,9 +33,9 @@ const HorizontalSidebar = () => {
   }, []);
 
   const isActiveMainMenu = (mainMenus) => {
-    const currentPath = location.pathname || ''; // Handle case where location.pathname is undefined
+    const currentPath = location.pathname || ''; 
 
-    // Check if mainMenus has route and compare with currentPath
+  
     return mainMenus.route && currentPath.split('/')[1] === mainMenus.route.split('/')[1] ||
       mainMenus.subRoutes?.some(subMenu => subMenu.route && currentPath.split('/')[1] === subMenu.route.split('/')[1]);
   };

@@ -14,7 +14,7 @@ const PrintReceiptModal = ({ user, serverCart, amount }) => {
       console.error('PDF content ref is not available');
       return;
     }
-
+  
     html2canvas(input, {
       scale: 2, // Higher quality
       logging: false,
@@ -26,16 +26,31 @@ const PrintReceiptModal = ({ user, serverCart, amount }) => {
         orientation: 'portrait',
         unit: 'mm'
       });
-
+  
       // Calculate PDF dimensions to maintain aspect ratio
       const imgWidth = 210; // A4 width in mm
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       
-      // Generate a filename with timestamp
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      pdf.save(`invoice-${timestamp}.pdf`);
+      // Create a blob from the PDF
+      const pdfBlob = pdf.output('blob');
+      
+      // Create an object URL for the blob
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      
+      // Open the PDF in a new window and trigger print
+      const printWindow = window.open(pdfUrl);
+      
+      // Wait for the PDF to load before printing
+      printWindow.onload = () => {
+        // Add a small delay to ensure the PDF is fully loaded
+        setTimeout(() => {
+          printWindow.print();
+          // Clean up the object URL after printing
+          URL.revokeObjectURL(pdfUrl);
+        }, 500);
+      };
     });
   };
 
@@ -112,7 +127,7 @@ const PrintReceiptModal = ({ user, serverCart, amount }) => {
                 onClick={handleGeneratePDF}
                 className="btn btn-primary px-4 me-2"
               >
-                Download PDF
+                Print Recipt
               </button>
               <button 
                 className="btn btn-secondary px-4" 
