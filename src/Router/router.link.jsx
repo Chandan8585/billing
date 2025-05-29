@@ -280,6 +280,7 @@ import Pricing from "../feature-module/pages/pricing";
 import Contacts from "../feature-module/Application/contacts";
 import { element } from "prop-types";
 import TransactionReport from "../feature-module/inventory/transactionReport";
+import CustomerList from "../core/modals/peoples/customerList";
 export const publicRoutes = [
   {
     id: 1,
@@ -1179,10 +1180,17 @@ export const publicRoutes = [
     route: Route,
   },
   {
+    id: 84,
+    path: routes.customerList,
+    name: "customers",
+    element: <CustomerList/>,
+    route: Route,
+  },
+  {
     id: 85,
-    path: routes.suppliers,
+    path: routes.supplierList,
     name: "suppliers",
-    element: <Suppliers />,
+    element: <supplierList/>,
     route: Route,
   },
   {

@@ -4,7 +4,15 @@ import { base_url } from '../../../environment.jsx';
 
 export const productApi = createApi({
   reducerPath: 'productApi',
-  baseQuery: fetchBaseQuery({ baseUrl: base_url,  credentials: 'include',}),
+  baseQuery: fetchBaseQuery({ baseUrl: base_url,
+    prepareHeaders: (headers) => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+      return headers;
+    }
+  }),
   tagTypes: ['Product', 'Category', 'Store', 'storeData', 'ProductId', 'brand', 'unit', 'itemCode', 'warrantyList', 'Cart'],
   endpoints: (builder) => ({
     getProductList: builder.query({
@@ -77,6 +85,20 @@ export const productApi = createApi({
       }),
       invalidatesTags: ['category'],
     }),
+    deleteCategory: builder.mutation({
+      query: (catId) => {
+        console.log("Deleting category with ID:", catId); // Debug log
+        // Pause execution for debugging
+    
+        return {
+          url: '/category/delete-category',
+          method: 'DELETE',
+          body: { id: catId }, // Ensure backend expects this format
+        };
+      },
+      invalidatesTags: ['category'],
+    }),
+    
     createProduct: builder.mutation({
       query: (newProduct) => ({
         url: '/product/addNewProduct',
@@ -136,6 +158,7 @@ export const {
     useGetBrandListQuery,
     useGetCategoryListQuery,
     useCreateCategoryMutation,
+    useDeleteCategoryMutation,
     useGetNewProductIdQuery,
     useFilterProductQuery,
     useCreateProductMutation,

@@ -16,7 +16,7 @@ import AddPurchases from "../../core/modals/purchases/addpurchases";
 const PurchasesList = () => {
 
   const dataSource = purchaseslist;
-
+  
   const columns = [
     {
       title: "SupplierName",

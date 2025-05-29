@@ -193,6 +193,29 @@ export const SidebarData = [
       // },
     ],
   },
+  {
+    label: "People",
+    submenuOpen: true,
+    showSubRoute: false,
+    submenuHdr: "People",
+
+    submenuItems: [
+      {
+        label: "Customers",
+        link: route.customerList,
+        icon: 'users-group',
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Suppliers",
+        link: route.supplierList,
+        icon: 'user-dollar',
+        showSubRoute: false,
+        submenu: false,
+      }
+    ],
+  },
   // {
   //   label: "Stock",
   //   submenuOpen: true,
@@ -308,35 +331,35 @@ export const SidebarData = [
   //     },
   //   ],
   // },
-  // {
-  //   label: "Purchases",
-  //   submenuOpen: true,
-  //   submenuHdr: "Purchases",
-  //   showSubRoute: false,
-  //   submenuItems: [
-  //     {
-  //       label: "Purchases",
-  //       link: "/purchase-list",
-  //       icon: 'shopping-bag',
-  //       showSubRoute: false,
-  //       submenu: false,
-  //     },
-  //     {
-  //       label: "Purchase Order",
-  //       link: "/purchase-order-report",
-  //       icon: 'file-unknown',
-  //       showSubRoute: false,
-  //       submenu: false,
-  //     },
-  //     {
-  //       label: "Purchase Return",
-  //       link: "/purchase-returns",
-  //       icon: 'file-upload',
-  //       showSubRoute: false,
-  //       submenu: false,
-  //     },
-  //   ],
-  // },
+  {
+    label: "Purchases",
+    submenuOpen: true,
+    submenuHdr: "Purchases",
+    showSubRoute: false,
+    submenuItems: [
+      {
+        label: "Purchases",
+        link: "/purchase-list",
+        icon: 'shopping-bag',
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Purchase Order",
+        link: "/purchase-order-report",
+        icon: 'file-unknown',
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Purchase Return",
+        link: "/purchase-returns",
+        icon: 'file-upload',
+        showSubRoute: false,
+        submenu: false,
+      },
+    ],
+  },
 
   // {
   //   label: "Finance & Accounts",
@@ -417,50 +440,7 @@ export const SidebarData = [
   //   ],
   // },
 
-  // {
-  //   label: "People",
-  //   submenuOpen: true,
-  //   showSubRoute: false,
-  //   submenuHdr: "People",
-
-  //   submenuItems: [
-  //     {
-  //       label: "Customers",
-  //       link: route.customers,
-  //       icon: 'users-group',
-  //       showSubRoute: false,
-  //       submenu: false,
-  //     },
-  //     {
-  //       label: "Billers",
-  //       link: "/billers",
-  //       icon: 'user-up',
-  //       showSubRoute: false,
-  //       submenu: false,
-  //     },
-  //     {
-  //       label: "Suppliers",
-  //       link: "/suppliers",
-  //       icon: 'user-dollar',
-  //       showSubRoute: false,
-  //       submenu: false,
-  //     },
-  //     {
-  //       label: "Stores",
-  //       link: "/store-list",
-  //       icon: 'home-bolt',
-  //       showSubRoute: false,
-  //       submenu: false,
-  //     },
-  //     {
-  //       label: "Warehouses",
-  //       link: "/warehouse",
-  //       icon: 'archive',
-  //       showSubRoute: false,
-  //       submenu: false,
-  //     },
-  //   ],
-  // },
+  
 
   // {
   //   label: "HRM",

@@ -5,6 +5,7 @@ import {
 
   X,
 } from "feather-icons-react/build/IconComponents";
+import './printReceipt.css';
 import {
   Check,
   Edit,

@@ -173,16 +173,15 @@ const Header = () => {
               to="#"
               style={{
                 display:
-                  pathname.includes("tasks") || pathname.includes("pos")
+                  pathname.includes("tasks") || pathname.includes("compose")
                     ? "none"
-                    : pathname.includes("compose")
-                      ? "none"
-                      : "",
+                    : "",
               }}
               onClick={handlesidebar}
             >
               <FeatherIcon icon="chevrons-left" className="feather-16" />
             </Link>
+
           </div>
           {/* /Logo */}
           <Link
@@ -475,17 +474,9 @@ const Header = () => {
                 </div>
               </div>
             </li>
-            <li className="nav-item pos-nav">
-              <Link
-                to={route.pos2}
-                className="btn btn-dark btn-md d-inline-flex align-items-center"
-              >
-                <i className="ti ti-device-laptop me-1" />
-                POS
-              </Link>
-            </li>
+        
 
-
+       
 
             {/* Flag */}
             <li className="nav-item dropdown has-arrow flag-nav nav-item-box">
@@ -697,7 +688,17 @@ const Header = () => {
           </ul>
           {/* /Header Menu */}
           {/* Mobile Menu */}
+      
           <div className="dropdown mobile-user-menu">
+          {/* <div className="nav-item pos-nav"> */}
+              <Link
+                to={route.pos2}
+                className="btn btn-dark btn-md d-inline-flex align-items-center"
+              >
+                <i className="ti ti-device-laptop me-1" />
+                POS
+              </Link>
+            {/* </div> */}
             <Link
               to="#"
               className="nav-link dropdown-toggle"
@@ -717,6 +718,7 @@ const Header = () => {
                 Logout
               </Link>
             </div>
+        
           </div>
           {/* /Mobile Menu */}
         </div>

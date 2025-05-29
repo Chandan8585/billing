@@ -44,9 +44,10 @@ const Signin = () => {
       }).unwrap(); // Important: unwrap() to get the actual response or throw an error
       // response
       // Handle successful login
+      console.log("res", response);
         dispatch(setUser({
         user: response.user,
-        // token: response.token
+        token: response.token
       }));
       navigate(route.dashboard);
     } catch (error) {

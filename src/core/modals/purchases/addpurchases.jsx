@@ -4,18 +4,35 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Select from "react-select";
 import TextEditor from "../../../feature-module/inventory/texteditor";
+import { useGetProductListQuery } from "../../redux/api/productApi";
+import { useGetAllSupplierQuery } from "../../redux/api/userApi";
 
-const AddPurchases = () => {
+const AddPurchases = () => { 
+  const { data: product, isLoading, error } = useGetProductListQuery();
+  const {data: suppliers,  isLoading: isload, error:iserr } = useGetAllSupplierQuery();
+
+  console.log(product);
+  // const dispatch = useDispatch();
+
+  // const data = useSelector((state) => state.rootReducer.toggle_header);
+  const productlist = product?.data?.map(item=> ({
+    value: item?._id,
+    label: item?.productName
+  }))
+console.log("supplier", suppliers);
+  // const suppliers = supplier.data.map(item=> ({
+    
+  // }))
   const status = [
     { value: "choose", label: "Choose" },
     { value: "received", label: "Received" },
     { value: "pending", label: "Pending" },
   ];
-  const productlist = [
-    { value: "choose", label: "Choose" },
-    { value: "Shoe", label: "Shoe" },
-    { value: "Mobile", label: "Mobile" },
-  ];
+  // const productlist = [
+  //   { value: "choose", label: "Choose" },
+  //   { value: "Shoe", label: "Shoe" },
+  //   { value: "Mobile", label: "Mobile" },
+  // ];
   const customers = [
     { value: "Select Customer", label: "Select Customer" },
     { value: "Apex Computers", label: "Apex Computers" },
@@ -52,13 +69,13 @@ const AddPurchases = () => {
                 <div className="modal-body custom-modal-body">
                   <form>
                     <div className="row">
-                      <div className="col-lg-3 col-md-6 col-sm-12">
+                      <div className="col-lg-6 col-md-6 col-sm-12">
                         <div className="input-blocks add-product">
                           <label>Supplier Name</label>
                           <div className="row">
                             <div className="col-lg-10 col-sm-10 col-10">
                               <Select
-                                options={customers}
+                                options={suppliers}
                                 classNamePrefix="react-select"
                                 placeholder="Choose"
                               />
@@ -89,47 +106,93 @@ const AddPurchases = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="col-lg-3 col-md-6 col-sm-12">
-                        <div className="input-blocks">
-                          <label>Product Name</label>
-                          <Select
-                            options={productlist}
-                            classNamePrefix="react-select"
-                            placeholder="Choose"
-                          />
-                        </div>
-                      </div>
-                      <div className="col-lg-3 col-md-6 col-sm-12">
-                        <div className="input-blocks">
-                          <label>Reference No</label>
-                          <input type="text" className="form-control" />
-                        </div>
-                      </div>
+              
+               
                     </div>
                     <div className="row">
-                      <div className="col-lg-12">
-                        <div className="input-blocks">
-                          <label>Product Name</label>
-                          <input
-                            type="text"
-                            placeholder="Please type product code and select"
-                          />
-                        </div>
-                      </div>
+  <div className="col-lg-3 col-md-6 col-sm-12">
+    <div className="input-blocks">
+      <label>Product Name</label>
+      <div className="col-lg-10 col-sm-10 col-10">
+        <Select
+          options={productlist}
+          classNamePrefix="react-select"
+          placeholder="Choose"
+        />
+      </div>
+    </div>
+  </div>
+  
+  <div className="col-lg-3 col-md-6 col-sm-12">
+    <div className="input-blocks">
+      <label>Caret</label>
+      <input type="text" className="form-control" />
+    </div>
+  </div>
+  
+  <div className="col-lg-3 col-md-6 col-sm-12">
+    <div className="input-blocks">
+      <label>PKT</label>
+      <input type="text" className="form-control" />
+    </div>
+  </div>
+  
+  <div className="col-lg-3 col-md-6 col-sm-12">
+    <div className="input-blocks">
+      <label>Total(PKT)</label>
+      <input type="text" className="form-control" />
+    </div>
+  </div>
+  
+  <div className="col-lg-3 col-md-6 col-sm-12">
+    <div className="input-blocks">
+      <label>Unit</label>
+      <input type="text" className="form-control" />
+    </div>
+  </div>
+  
+  <div className="col-lg-3 col-md-6 col-sm-12">
+    <div className="input-blocks">
+      <label>Rate</label>
+      <input type="text" className="form-control" />
+    </div>
+  </div>
+  
+  <div className="col-lg-3 col-md-6 col-sm-12">
+    <div className="input-blocks">
+      <label>Note</label>
+      <input type="text" className="form-control" />
+    </div>
+  </div>
+  
+  <div className="col-lg-3 col-md-6 col-sm-12 d-flex align-items-end">
+    <div className="input-blocks w-100">
+      <button 
+        type="button"
+        className="btn btn-primary w-100"
+        style={{ height: '38px' }} // Match input field height
+      >
+        ADD
+      </button>
+    </div>
+  </div>
+</div>
+                    <div className="row">
+              
                       <div className="col-lg-12">
                         <div className="modal-body-table">
                           <div className="table-responsive">
                             <table className="table  datanew">
                               <thead>
                                 <tr>
-                                  <th>Product</th>
-                                  <th>Qty</th>
-                                  <th>Purchase Price($)</th>
-                                  <th>Discount($)</th>
-                                  <th>Tax(%)</th>
-                                  <th>Tax Amount($)</th>
-                                  <th>Unit Cost($)</th>
-                                  <th>Total Cost(%)</th>
+                                  <th>S No.</th>
+                                  <th>Vendor Name</th>
+                                  <th>Product Name</th>
+                                  <th>Qunatity</th>
+                                  <th>Unit</th>
+                                  <th>Rate</th>
+                                  <th>Note</th>
+                                  <th>Amount</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -148,44 +211,9 @@ const AddPurchases = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="row">
-                        <div className="col-lg-3 col-md-6 col-sm-12">
-                          <div className="input-blocks">
-                            <label>Order Tax</label>
-                            <input type="text" defaultValue={0} />
-                          </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6 col-sm-12">
-                          <div className="input-blocks">
-                            <label>Discount</label>
-                            <input type="text" defaultValue={0} />
-                          </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6 col-sm-12">
-                          <div className="input-blocks">
-                            <label>Shipping</label>
-                            <input type="text" defaultValue={0} />
-                          </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6 col-sm-12">
-                          <div className="input-blocks">
-                            <label>Status</label>
-                            <Select
-                              options={status}
-                              classNamePrefix="react-select"
-                              placeholder="Choose"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                  
                     </div>
-                    <div className="col-lg-12">
-                      <div className="input-blocks summer-description-box">
-                        <label>Notes</label>
-                        <div id="summernote" />
-                        <TextEditor />
-                      </div>
-                    </div>
+          
                     <div className="col-lg-12">
                       <div className="modal-footer-btn">
                         <button
@@ -195,9 +223,7 @@ const AddPurchases = () => {
                         >
                           Cancel
                         </button>
-                        <Link to="#" className="btn btn-submit">
-                          Submit
-                        </Link>
+                  
                       </div>
                     </div>
                   </form>

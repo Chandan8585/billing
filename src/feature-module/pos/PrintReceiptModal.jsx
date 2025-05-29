@@ -1,145 +1,217 @@
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
 import ImageWithBasePath from '../../core/img/imagewithbasebath';
 import PropTypes from 'prop-types';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 
 const PrintReceiptModal = ({ user, serverCart, amount }) => {
-  const receiptRef = useRef();
+  const [showModal, setShowModal] = useState(false);
 
-  const handleGeneratePDF = () => {
-    const input = receiptRef.current;
-    
-    if (!input) {
-      console.error('PDF content ref is not available');
-      return;
-    }
-  
-    html2canvas(input, {
-      scale: 2, // Higher quality
-      logging: false,
-      useCORS: true,
-      allowTaint: true
-    }).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm'
-      });
-  
-      // Calculate PDF dimensions to maintain aspect ratio
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      
-      // Create a blob from the PDF
-      const pdfBlob = pdf.output('blob');
-      
-      // Create an object URL for the blob
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      
-      // Open the PDF in a new window and trigger print
-      const printWindow = window.open(pdfUrl);
-      
-      // Wait for the PDF to load before printing
-      printWindow.onload = () => {
-        // Add a small delay to ensure the PDF is fully loaded
-        setTimeout(() => {
-          printWindow.print();
-          // Clean up the object URL after printing
-          URL.revokeObjectURL(pdfUrl);
-        }, 500);
-      };
-    });
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Receipt</title>
+          <style>
+            @page {
+              size: A5 portrait;
+              margin: 0;
+              padding: 0;
+            }
+            body {
+              font-family: 'Arial Narrow', Arial, sans-serif;
+              color: #000;
+              margin: 0;
+              padding: 0;
+              width: 148mm;
+              font-size: 12px;
+            }
+            .receipt-container {
+              width: 100%;
+              padding: 5mm;
+              box-sizing: border-box;
+            }
+            .text-center { text-align: center; }
+            .text-end { text-align: right; }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 5px 0;
+              font-size: 11px;
+            }
+            th, td {
+              padding: 3px 5px;
+              border-bottom: 1px dashed #000;
+              text-align: left;
+            }
+            .text-end th, .text-end td {
+              text-align: right;
+            }
+            .border-top { border-top: 1px solid #000; }
+            .border-bottom { border-bottom: 1px solid #000; }
+            .logo {
+              max-width: 60mm;
+              height: auto;
+              margin: 0 auto 5px;
+              display: block;
+            }
+            .company-name {
+              font-size: 14px;
+              font-weight: bold;
+              margin-bottom: 3px;
+            }
+            .invoice-title {
+              font-size: 13px;
+              font-weight: bold;
+              margin: 5px 0;
+            }
+            .total-section {
+              font-size: 13px;
+              margin-top: 8px;
+            }
+            .thank-you {
+              margin-top: 10px;
+              font-style: italic;
+            }
+            .terms {
+              font-size: 10px;
+              margin-top: 5px;
+            }
+            .no-border {
+              border: none !important;
+            }
+            .dashed-border {
+              border-bottom: 1px dashed #000;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-container">
+            ${document.getElementById('print-content').innerHTML}
+          </div>
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+                window.close();
+              }, 200);
+            }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   return (
-    <div className="modal fade" id="print-receipt" tabIndex="-1" aria-hidden="true">
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content">
-          <div className="modal-body p-4">
-            {/* PDF content with explicit ID and ref */}
-            <div id="print-content" ref={receiptRef} style={{ backgroundColor: 'white', padding: '20px' }}>
-              <div className="text-center mb-3">
-                <ImageWithBasePath 
-                  src="assets/img/logo.png" 
-                  width={150} 
-                  alt="Company Logo" 
-                  className="mb-2"
-                />
-                <h5>{user?.company || 'Your Company'}</h5>
-                <p className="mb-1">Phone: +91 9876543210</p>
-                <p>Email: company@example.com</p>
-              </div>
-              
-              <div className="border-top border-bottom py-2 my-3">
-                <h6 className="text-center mb-0">ORDER INVOICE</h6>
-              </div>
-
-              <div className="row mb-3">
-                <div className="col-6">
-                  <p className="mb-1"><strong>Invoice No:</strong> INV-{Math.floor(Math.random() * 10000)}</p>
-                  <p className="mb-1"><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
+    <>
+      {/* Modal */}
+      <div className={`modal fade ${showModal ? 'show d-block' : ''}`} id="print-receipt" tabIndex="-1" style={{ backgroundColor: showModal ? 'rgba(0,0,0,0.5)' : 'transparent' }}>
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <div className="modal-body p-4">
+              {/* Receipt content */}
+              <div id="print-content" className="receipt-content" style={{ color: '#000000' }}>
+                <div className="text-center mb-2">
+                  <ImageWithBasePath 
+                    src="assets/img/logo.png" 
+                    width={120} 
+                    alt="Company Logo" 
+                    className="logo"
+                  />
+                  <div className="company-name">{user?.company || 'Your Company'}</div>
+                  <div>Phone: +91 9876543210</div>
+                  <div>Email: company@example.com</div>
                 </div>
-                <div className="col-6 text-end">
-                  <p className="mb-1"><strong>Customer ID:</strong> CUST-{Math.floor(Math.random() * 1000)}</p>
+                
+                <div className="text-center border-top border-bottom py-1 my-1">
+                  <div className="invoice-title">ORDER INVOICE</div>
                 </div>
-              </div>
 
-              <table className="table mb-4">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th className="text-end">Price</th>
-                    <th className="text-end">Qty</th>
-                    <th className="text-end">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {serverCart?.map((item, index) => (
-                    <tr key={index}>
-                      <td>{item?.product?.productName}</td>
-                      <td className="text-end">₹{item.saleRate}</td>
-                      <td className="text-end">{item.quantity}</td>
-                      <td className="text-end">₹{(item.saleRate * item.quantity)}</td>
+                <table className="no-border">
+                  <tbody>
+                    <tr>
+                      <td><strong>Invoice No:</strong> INV-{Math.floor(Math.random() * 10000)}</td>
+                      <td className="text-end"><strong>Date:</strong> {new Date().toLocaleDateString()}</td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                    <tr>
+                      <td colSpan="2" className="dashed-border"><strong>Customer ID:</strong> CUST-{Math.floor(Math.random() * 1000)}</td>
+                    </tr>
+                  </tbody>
+                </table>
 
-              <div className="text-end border-top pt-3">
-                <p><strong>Sub Total:</strong> ₹{amount?.subtotal}</p>
-                <p><strong>Tax (GST):</strong> ₹{amount?.tax}</p>
-                <p><strong>Discount:</strong> -₹{amount?.discount}</p>
-                <h5><strong>Total:</strong> ₹{amount?.total}</h5>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th className="text-end">Price</th>
+                      <th className="text-end">Qty</th>
+                      <th className="text-end">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {serverCart?.map((item, index) => (
+                      <tr key={index}>
+                        <td>{item?.product?.productName}</td>
+                        <td className="text-end">₹{item.saleRate}</td>
+                        <td className="text-end">{item.quantity}</td>
+                        <td className="text-end">₹{(item.saleRate * item.quantity)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <div className="text-end total-section">
+                  <table className="no-border">
+                    <tbody>
+                      <tr>
+                        <td className="text-end"><strong>Sub Total:</strong></td>
+                        <td className="text-end" style={{ width: '30mm' }}>₹{amount?.subtotal}</td>
+                      </tr>
+                      <tr>
+                        <td className="text-end"><strong>Tax (GST):</strong></td>
+                        <td className="text-end">₹{amount?.tax}</td>
+                      </tr>
+                      <tr>
+                        <td className="text-end"><strong>Discount:</strong></td>
+                        <td className="text-end">-₹{amount?.discount}</td>
+                      </tr>
+                      <tr className="border-top">
+                        <td className="text-end"><strong>TOTAL:</strong></td>
+                        <td className="text-end">₹{amount?.total}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="text-center thank-you">
+                  Thank you for your business!
+                </div>
+                <div className="text-center terms">
+                  ** Terms and conditions apply
+                </div>
               </div>
 
-              <div className="text-center mt-4 pt-3 border-top">
-                <p className="mb-1">Thank you for your business!</p>
-                <small>** Terms and conditions apply</small>
+              {/* Print controls */}
+              <div className="text-center mt-4">
+                <button 
+                  onClick={handlePrint}
+                  className="btn btn-primary px-4 me-2"
+                  data-bs-dismiss="modal"
+                >
+                  Print Receipt
+                </button>
+                <button 
+                  className="btn btn-secondary px-4" 
+                  onClick={() => setShowModal(false)}
+                >
+                  Close
+                </button>
               </div>
-            </div>
-
-            {/* PDF controls - won't appear in PDF */}
-            <div className="text-center mt-4">
-              <button 
-                onClick={handleGeneratePDF}
-                className="btn btn-primary px-4 me-2"
-              >
-                Print Recipt
-              </button>
-              <button 
-                className="btn btn-secondary px-4" 
-                data-bs-dismiss="modal"
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
