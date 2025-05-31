@@ -36,6 +36,7 @@ import PropTypes from 'prop-types';
 
 const initialFormState = {
   saleRate: 0,
+  purchaseRate: 0,
   productId: '',
   sku: '',
   store: '',
@@ -50,7 +51,7 @@ const initialFormState = {
   thumbnail: null,       // image preview or URL string
   Image: null,           // actual File object
   description: '',
-  quantity: 0,
+  // quantity: 0,
   gstType: false,        // true or false, not string
   gstRate: 0,
   discountType: '',
@@ -81,8 +82,8 @@ const ProductForm = ({isEditMode}) => {
   const {productObjectId} = useParams();
   const navigate = useNavigate(); 
   const [formData, setFormData] = useState(initialFormState);
-  const [createProduct, {isLoading: isCreating}] = useCreateProductMutation();
-  const [updateProduct, {isLoading: isUpdating}] = useUpdateProductMutation();
+  const [createProduct] = useCreateProductMutation();
+  const [updateProduct] = useUpdateProductMutation();
   const [selectedImage, setSelectedImage] = useState(formData.thumbnail || null);
   const {data: existingProduct, isLoading: isProductLoading} = useGetProductDetailByIdQuery(productObjectId 
     ,{skip: !isEditMode}
@@ -142,7 +143,7 @@ const handleUnitAdded = (newUnit) => {
     gstType: formData.gstType === "true",
     fastMoving: Boolean(formData.fastMoving),
     saleRate: parseFloat(formData.saleRate),
-    quantity: parseInt(formData.quantity),
+    purchaseRate: parseInt(formData.purchaseRate),
     gstRate: parseFloat(formData.gstRate),    
       };
       Object.keys(requestData).forEach(key => {
@@ -726,10 +727,10 @@ const handleImageChange = (e) => {
                                 <div className="col-lg-4 col-sm-6 col-12">
                                   <div className="mb-3">
                                     <label className="form-label">
-                                      Quantity<span className="text-danger ms-1">*</span>
+                                      Purchase Rate<span className="text-danger ms-1">*</span>
                                     </label>
                                 
-                                    <input type="number" className="form-control"  onChange={ handleInputChange} value={formData.quantity} name="quantity"/>
+                                    <input type="number" className="form-control"  onChange={ handleInputChange} value={formData.purchaseRate} name="purchaseRate"/>
                                   </div>
                                 </div>
                                 <div className="col-lg-4 col-sm-6 col-12">

@@ -143,7 +143,7 @@ import StorageSettings from "../feature-module/settings/othersettings/storageset
 import AttendanceAdmin from "../feature-module/hrm/attendanceadmin";
 import Payslip from "../feature-module/hrm/payslip";
 import Holidays from "../feature-module/hrm/holidays";
-import SalesList from "../feature-module/sales/saleslist";
+import SalesList from "../feature-module/purchases/saleslist";
 import SalesReturn from "../feature-module/sales/salesreturn";
 import QuotationList from "../feature-module/sales/quotationlist";
 import Notes from "../feature-module/Application/notes";
@@ -1067,11 +1067,25 @@ export const publicRoutes = [
     element: <PurchasesList />,
     route: Route,
   },
+{
+  id: 302,
+  path: routes.salelist,
+  name: "saleslist",
+  element: <SalesList/>,
+  route: Route,
+},
   {
     id: 69,
     path: routes.purchaseorderreport,
     name: "purchaseorderreport",
     element: <PurchaseOrderReport />,
+    route: Route,
+  },
+  {
+    id: 303,
+    path: routes.saleorderreport,
+    name: "salesorderreport",
+    element: <salesorderreport/>,
     route: Route,
   },
   {
@@ -1397,13 +1411,13 @@ export const publicRoutes = [
     element: <Payslip />,
     route: Route,
   },
-  {
-    id: 102,
-    path: routes.saleslist,
-    name: "saleslist",
-    element: <SalesList />,
-    route: Route,
-  },
+  // {
+  //   id: 102,
+  //   path: routes.saleslist,
+  //   name: "saleslist",
+  //   element: <SalesList />,
+  //   route: Route,
+  // },
   {
     id: 102,
     path: routes.invoicereport,

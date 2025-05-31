@@ -345,8 +345,22 @@ export const SidebarData = [
         submenu: false,
       },
       {
+        label: "Sales",
+        link: "/sale-list",
+        icon: 'shopping-bag',
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
         label: "Purchase Order",
         link: "/purchase-order-report",
+        icon: 'file-unknown',
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Sales Order",
+        link: "/sale-order-report",
         icon: 'file-unknown',
         showSubRoute: false,
         submenu: false,

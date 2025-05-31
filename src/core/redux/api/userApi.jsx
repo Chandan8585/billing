@@ -40,24 +40,13 @@ const extendedUserApi = productApi.injectEndpoints({
       }),
       invalidatesTags: ['User'],
     }),
-    
-    // removeFromUser: builder.mutation({
-    //   query: (productId) => ({
-    //     url: `/cart/product/${productId}`,
-    //     method: 'DELETE',
-    //   }),
-    //   invalidatesTags: ['User'],
-    // }),
-    // getUserTotals: builder.query({
-    //   query: () => '/cart/totals',
-    //   providesTags: ['User'],
-    // }),
-    
     getAllSupplier: builder.query({
-      query: ()=> ({
-        query: () => '/users/suppliers',
-        providesTags: ['User'],
-      }),
+      query: () => '/users/suppliers',
+      providesTags: ['supplier'],
+    }),
+    getAllCustomer: builder.query({
+      query: () => '/users/customers',
+      providesTags: ['customer'],
     })
   }),
   overrideExisting: false,
@@ -67,6 +56,7 @@ export const {
   useLoginUserMutation,
   useSignUpUserMutation,
   useGetAllSupplierQuery,
+  useGetAllCustomerQuery,
   useRemoveFromUserMutation,
   useGetUserTotalsQuery,
   useUserProfileUpdateMutation
